@@ -1,0 +1,9 @@
+{
+  "name": "likened-b2b",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "npx http-server public -p 8080",
+    "serve": "npx http-server public -p 8080"
+  }
+}
