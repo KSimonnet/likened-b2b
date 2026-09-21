@@ -3958,9 +3958,29 @@ main {
 }
 
 @media (max-width: 768px) {
+  .header-nav-container {
+    flex-direction: row;
+    justify-content: space-between;
+    text-align: left;
+    gap: calc(2 * var(--likened-padding));
+  }
+
+  .nav-menu,
+  .header-dark-toggle {
+    display: none;
+  }
+
+  .header-actions {
+    margin-left: auto;
+  }
+
   .hero {
     overflow: hidden;
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hero h2 {
+    font-size: calc(4 * var(--likened-padding));
   }
 
   .b2b-stat-label--visible {
@@ -3969,5 +3989,24 @@ main {
 
   .b2b-stat-label--hidden {
     right: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-actions > .link-no-underline {
+    display: none;
+  }
+
+  .header-actions .button-link {
+    height: auto;
+    padding: var(--likened-padding) calc(1.5 * var(--likened-padding));
+  }
+
+  .hero h2 {
+    font-size: calc(3.25 * var(--likened-padding));
+  }
+
+  .hero .button-link-container {
+    flex-wrap: wrap;
   }
 }
