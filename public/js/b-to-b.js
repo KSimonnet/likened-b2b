@@ -1,4 +1,4 @@
-import { animateStatCounter } from "../app/js/lib/animate-stat-counter.js";
+import { animateStatCounter } from "./animate-stat-counter.js";
 import { AnimationManager } from "@ksimonnet/utils/web/classes/modules/animation-manager.js";
 import { buildSVGOverlayOn } from "@ksimonnet/utils/web/manip-dom/modules/build-svg-overlay-on.js";
 import { createSVGImage } from "@ksimonnet/utils/web/manip-dom/modules/create-svg-image.js";

@@ -1,6 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
+import * as esbuild from "esbuild";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -37,11 +38,23 @@ async function buildCssBundle() {
   );
 }
 
+async function buildJavaScriptBundle() {
+  await esbuild.build({
+    bundle: true,
+    entryPoints: [path.join(PROJECT_ROOT, "public", "js", "b-to-b.js")],
+    format: "iife",
+    outfile: path.join(DIST_ROOT, "js", "b-to-b.js"),
+    platform: "browser",
+    target: "es2020"
+  });
+}
+
 async function build() {
   console.log("Building static B2B site...");
   await cleanDist();
   await copyDirectory(path.join(PROJECT_ROOT, "public"), DIST_ROOT);
   await buildCssBundle();
+  await buildJavaScriptBundle();
   console.log("✅ Static site copied to dist/");
 }
 
