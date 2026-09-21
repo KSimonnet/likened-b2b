@@ -21,24 +21,14 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: likened-b2b
     env:
       NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
-        with:
-          path: likened-b2b
-      - uses: actions/checkout@v4
-        with:
-          repository: KSimonnet/likened-webapp
-          path: likened-webapp
+      - uses: actions/checkout@v5
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: likened-b2b/package-lock.json
       - name: Configure GitHub Packages authentication
         run: |
           npm config set @ksimonnet:registry https://npm.pkg.github.com
@@ -48,6 +38,6 @@ jobs:
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: likened-b2b/dist
+          path: dist
       - id: deployment
         uses: actions/deploy-pages@v4
