@@ -1,4 +1,3 @@
-/* === likened-brand-kit.css === */
 /* === Likened Brand Kit === */
 /* Canonical source for all brand tokens (colors, spacing, fonts, shadows) */
 /* Used by: landing page, webapp, chrome extension                         */
@@ -165,6 +164,9 @@
 .color-black {
   color: var(--likened-black);
 }
+.color-white {
+  color: var(--likened-white);
+}
 .color-grey {
   color: var(--likened-grey);
 }
@@ -183,7 +185,8 @@
 .color-yellow {
   color: var(--likened-yellow);
 }
-/* === likened-style.css === */
+
+
 /* === Utility === */
 /* the hidden attribute is typically implemented by the browser's user-agent stylesheet as:*/
 [hidden] {
@@ -1106,7 +1109,6 @@ select:focus {
 }
 
 
-/* === page-style.css === */
 /* === Shared Page Chrome Styles ===
    Shared by: webapp, landing page, prototype
    Requires: likened-brand-kit.css (CSS variables)
@@ -1115,7 +1117,6 @@ select:focus {
 /* === Base Element Styling === */
 
 body > header {
-  margin-bottom: calc(4 * var(--likened-margin));
   padding: calc(2 * var(--likened-padding)) calc(3 * var(--likened-padding));
   box-shadow: var(--likened-box-shadow-light);
   background-color: var(--likened-light-blue);
@@ -1271,8 +1272,8 @@ a:visited {
 .segmented-section {
   box-sizing: border-box;
   width: 100%;
-  max-width: 1200px;
-  margin-inline: auto;
+  max-width: 1400px;
+  margin: 0 auto;
   border-radius: var(--likened-border-radius);
   box-shadow: var(--likened-box-shadow-light);
   padding: calc(8 * var(--likened-padding));
@@ -1484,7 +1485,7 @@ input[type="radio"] + label {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  max-width: 75rem;
+  max-width: 1400px;
   margin: 0 auto;
   gap: calc(4 * var(--likened-spacing));
 }
@@ -2018,7 +2019,7 @@ a.stat-link:hover .stat-counter {
 
 /* ─── Responsive overrides for shared section layout ────────────────────────── */
 
-@media (max-width: 1200px) {
+@media (max-width: 1400px) {
   .segmented-section {
     padding: calc(6 * var(--likened-padding));
   }
@@ -2087,7 +2088,6 @@ a.stat-link:hover .stat-counter {
 }
 
 
-/* === modal.css === */
 /* Full-screen backdrop rendered by ModalManager */
 .modal-overlay {
   position: fixed;
@@ -2584,7 +2584,6 @@ thead th {
 }
 
 
-/* === slider-switch.css === */
 /* Slider styling with insnare's colour palette
    Architecture: .slider uses display:flex + padding to reserve space for the knob,
    so ::after (the label text) is an in-flow flex item. This lets width:fit-content
@@ -2676,10 +2675,47 @@ thead th {
 }
 
 
-/* === b-to-b.css === */
 /* === BtoB Landing Page — page-specific overrides === */
 /* All shared tokens (colours, spacing, typography) come from
    the bundle: brand-kit → likened-style → page-style → b-to-b */
+
+/* ─── Alternating full-width section stripes ─────────────────────────────── */
+
+main {
+  gap: 0;
+  padding-inline: calc(3 * var(--likened-padding));
+  background: linear-gradient(
+    to bottom,
+    var(--likened-blue),
+    var(--likened-dark-grey)
+  );
+}
+
+.segmented-section {
+  margin-bottom: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.b2b-stripe--deep {
+  color: var(--likened-white);
+  background: transparent;
+}
+
+.b2b-stripe--light {
+  color: var(--likened-black);
+  background-color: var(--likened-white);
+  box-shadow: 0 0 0 100vmax var(--likened-white);
+  clip-path: inset(0 -100vmax);
+}
+
+.b2b-stripe--deep :is(h1, h2, h3, p, li, dt, dd, summary) {
+  color: inherit;
+}
+
+.b2b-surface--light :is(h1, h2, h3, p, li, dt, dd, summary) {
+  color: inherit;
+}
 
 /* ─── Stats Hook ────────────────────────────────────────────────────────────── */
 
@@ -3805,9 +3841,130 @@ thead th {
   max-width: 700px;
 }
 
+/* ─── B2B hero ──────────────────────────────────────────────────────────── */
 
+.hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  align-items: center;
+  padding-inline: 0;
+  gap: calc(7 * var(--likened-padding));
+}
 
+.hero .cta-callout {
+  padding: 0;
+  background: transparent;
+  text-align: left;
+}
 
+.hero h2 {
+  display: block;
+  width: 100%;
+  max-width: 14ch;
+  font-size: calc(6.5 * var(--likened-padding));
+  line-height: 1.05;
+  text-wrap: balance;
+}
 
+.hero p {
+  margin-top: calc(3 * var(--likened-padding));
+  line-height: var(--likened-line-height-reading);
+}
 
+.b2b-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--likened-spacing);
+  margin: 0 0 calc(3 * var(--likened-padding));
+  padding: var(--likened-spacing) calc(2 * var(--likened-padding));
+  border: var(--likened-border-thickness) solid var(--likened-grey);
+  border-radius: calc(4 * var(--likened-padding));
+  color: var(--likened-light-blue);
+}
 
+.b2b-eyebrow::before {
+  width: var(--likened-spacing);
+  height: var(--likened-spacing);
+  border-radius: 50%;
+  background-color: var(--likened-light-blue);
+  content: "";
+}
+
+.hero .button-link-container {
+  justify-content: flex-start;
+  gap: calc(2 * var(--likened-padding));
+  margin-top: calc(5 * var(--likened-padding));
+}
+
+.hero .button-link {
+  margin: 0;
+  background-color: var(--likened-white);
+  color: var(--likened-black);
+}
+
+.b2b-hero-note {
+  margin-top: calc(2 * var(--likened-padding));
+}
+
+.b2b-hero-media {
+  position: relative;
+  overflow: visible;
+}
+
+.b2b-hero-media img {
+  display: block;
+  width: 100%;
+  border-radius: var(--likened-border-radius);
+  box-shadow: var(--likened-box-shadow-button);
+}
+
+.b2b-stat-label {
+  position: absolute;
+  padding: calc(1.5 * var(--likened-padding)) calc(2 * var(--likened-padding));
+  border-radius: var(--likened-border-radius);
+  box-shadow: var(--likened-box-shadow-light);
+  background-color: var(--likened-white);
+  color: var(--likened-black);
+}
+
+.b2b-stat-label span,
+.b2b-stat-label strong {
+  display: block;
+}
+
+.b2b-stat-label span {
+  margin-bottom: var(--likened-spacing);
+  color: var(--likened-grey);
+}
+
+.b2b-stat-label--hidden span {
+  color: var(--likened-light-blue);
+}
+
+.b2b-stat-label--visible {
+  top: calc(3 * var(--likened-padding));
+  left: calc(-2 * var(--likened-padding));
+}
+
+.b2b-stat-label--hidden {
+  right: calc(-2 * var(--likened-padding));
+  bottom: calc(3 * var(--likened-padding));
+  background-color: var(--likened-blue);
+  color: var(--likened-white);
+}
+
+@media (max-width: 768px) {
+  .hero {
+    overflow: hidden;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .b2b-stat-label--visible {
+    left: 0;
+  }
+
+  .b2b-stat-label--hidden {
+    right: 0;
+  }
+}
