@@ -1,3 +1,49 @@
+# Dependencies
 node_modules/
+**/node_modules/
+
+# Build output: final, runnable or deployable version of the project
+dist/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
 .env
-.DS_Store
+.env.local
+.env.*
+!.env.example
+*.env
+credentials.json
+*.pem
+*.key
+.credentials
+
+# stryker temp files
+.stryker-tmp
+
+# Generated assets
+assets/images/*.png
+assets/images/*.svg
+assets/images/*.dot
+
+# Large media files (distribute separately)
+
+
+# Platform agent metadata (do not commit)
+.gitconfig
+.emergent/
+
+# supabase
+supabase/.temp
+
+# Folders
+plans/
+**/deprecated
+scripts/supabase-search/output
+.npmrc

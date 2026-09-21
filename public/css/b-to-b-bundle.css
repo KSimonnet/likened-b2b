@@ -183,8 +183,6 @@
 .color-yellow {
   color: var(--likened-yellow);
 }
-
-
 /* === likened-style.css === */
 /* === Utility === */
 /* the hidden attribute is typically implemented by the browser's user-agent stylesheet as:*/
@@ -1165,8 +1163,8 @@ h2 {
   width: fit-content;
   min-width: 0;
   margin: 0;
-  font-family: var(--font-1-family) !important ;
-  font-size: 1.25rem !important ; /* TODO: no brand kit token for 1.25rem — add --font-heading-size or use --font-1-size (1.5rem) */
+  font-family: var(--font-1-family);
+  font-size: 1.25rem; /* TODO: no brand kit token for 1.25rem — add --font-heading-size or use --font-1-size (1.5rem) */
   font-weight: bold;
   color: var(--likened-black);
 }
@@ -1486,15 +1484,46 @@ input[type="radio"] + label {
   align-items: center;
   justify-content: space-between;
   width: 100%;
+  max-width: 75rem;
+  margin: 0 auto;
+  gap: calc(4 * var(--likened-spacing));
 }
 
 /* Top navigation link row */
 .nav-menu {
   display: flex;
   align-items: center;
+  height: calc(5 * var(--likened-padding));
   gap: calc(2 * var(--likened-padding));
   flex-wrap: wrap;
+  justify-content: flex-start;
+  margin-left: calc(3 * var(--likened-padding));
+}
+
+.nav-menu a {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+}
+
+.header-nav-container > .nav-menu:last-child {
   justify-content: flex-end;
+  margin-left: auto;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: calc(2 * var(--likened-padding));
+  margin-left: auto;
+}
+
+.header-actions .button-link {
+  display: inline-flex;
+  align-items: center;
+  height: calc(5 * var(--likened-padding));
+  margin: 0;
+  padding: 0 calc(2 * var(--likened-padding));
 }
 
 /* Dark mode toggle row — right-aligned, below nav */
@@ -1671,7 +1700,12 @@ a.stat-link:hover .stat-counter {
 
   .nav-menu {
     justify-content: center;
+    margin-left: 0;
     width: 100%;
+  }
+
+  .header-actions {
+    margin-left: 0;
   }
 
   .header-dark-toggle {
@@ -3283,10 +3317,6 @@ thead th {
   }
 }
 
-.hero {
-  padding: 0;
-}
-
 /* ─── How It Works numbered cards ───────────────────────────────────────── */
 
 .how-it-works-heading {
@@ -3774,4 +3804,9 @@ thead th {
 #startup-advantage .section-text-container {
   max-width: 700px;
 }
+
+
+
+
+
 

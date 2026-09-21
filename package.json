@@ -2,9 +2,13 @@
   "name": "likened-b2b",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "node scripts/build.js",
-    "start": "npx http-server public -p 8080",
-    "serve": "npx kill-port 8080 && npm run build && npx http-server dist -p 8080 -o"
+    "start": "node scripts/serve.js",
+    "serve": "npm run build && node scripts/serve.js"
+  },
+  "dependencies": {
+    "@ksimonnet/likened-shared": "file:../likened-shared"
   }
 }
