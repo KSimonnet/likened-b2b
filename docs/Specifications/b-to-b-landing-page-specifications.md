@@ -2,7 +2,7 @@
 goal: BtoB Landing Page & BtoB Pricing Page
 version: 1.0
 date_created: 2026-03-28
-last_updated: 2026-07-23
+last_updated: 2026-09-21
 status: Draft
 feature_brief: docs/feature-brief/b-to-b-landing-page-feature-brief.md
 tags: ['landing-page', 'b2b', 'talent-acquisition', 'marketing']
@@ -441,3 +441,50 @@ The `https://forms.gle/p67EoZcdRRpGnTfZA` URL MUST appear exclusively inside Con
 ### REQ-BTP-009 — Footer
 
 The footer MUST be identical to `index.html` (REQ-INF-005).
+
+---
+
+## 6. Legacy B2B Edge Routing
+
+### REQ-ROUT-001 — Legacy B2B path match
+
+Cloudflare Single Redirects MUST match requests whose host is exactly
+`likened.net` and whose path begins with `/b-to-b` using:
+
+```text
+(http.host eq "likened.net" and starts_with(http.request.uri.path, "/b-to-b"))
+```
+
+The match MUST include `/b-to-b`, `/b-to-b/`, `/b-to-b/#testimonial`,
+`/b-to-b/pricing`, and every other path beginning with `/b-to-b`.
+
+### REQ-ROUT-002 — Static landing destination
+
+Every request matched by REQ-ROUT-001 MUST receive an HTTP 301 static redirect
+to `https://b2b.likened.net/`.
+
+Path-suffix preservation MUST be disabled. Consequently, a matched descendant
+path, including `/b-to-b/pricing`, MUST also resolve to the B2B landing page.
+
+### REQ-ROUT-003 — Query-string removal
+
+The redirect defined by REQ-ROUT-002 MUST NOT preserve query strings. The
+Cloudflare `preserve_query_string` setting MUST remain `false`.
+
+### REQ-ROUT-004 — Redirect precedence
+
+The B2B redirect MUST run in Cloudflare's
+`http_request_dynamic_redirect` phase through Single Redirects. It is a
+terminating action: after a request matches, later URL Rewrite Rules,
+Configuration Rules, Origin Rules, Bulk Redirects, and Managed Transforms MUST
+NOT alter the response.
+
+### CON-ROUT-001 — Destination host restriction
+
+The redirect destination host MUST be the fixed value `b2b.likened.net` and
+MUST NOT be derived from a request header, query parameter, or path fragment.
+
+### GOAL-ROUT-001 — Legacy-link continuity
+
+Visitors opening any legacy URL beginning with `https://likened.net/b-to-b`
+reach the canonical B2B landing page in one terminating redirect hop.
