@@ -157,7 +157,7 @@ Machine task table:
 ### Implementation Phase 4 — B2C Replication Runbook
 
 - **PHASE-HOSTCUT-004 Goal:** Publish `likened-webapp/public/index.html` and its B2C companion pages as an independent GitHub Pages site at `b2c.likened.net` without changing the product application at `likened.net/app/`.
-- **Current baseline (2026-09-22):** `b2b.likened.net` returns HTTP 200; `b2c.likened.net` returns HTTP 404; the Cloudflare legacy B2B redirect returns HTTP 301 to `https://b2b.likened.net/`.
+- **Current baseline (2026-09-22):** `b2b.likened.net` returns HTTP 200; B2C Pages is configured for GitHub Actions with the verified `b2c.likened.net` custom domain and enforced HTTPS; B2C production deployment and smoke verification are in progress. The Cloudflare legacy B2B redirect returns HTTP 301 to `https://b2b.likened.net/`.
 - **Precondition:** Create or designate a dedicated `KSimonnet/likened-b2c` repository and keep `likened-webapp` as the source of truth until the B2C artifact is independently reproducible.
 
 1. Copy the B2C landing source, pricing page, referenced `assets/`, vendor scripts, and the final B2C CSS bundle into `likened-b2c/public/`. Keep its `CNAME` file at repository root with only `b2c.likened.net`.
@@ -179,10 +179,10 @@ Machine task table:
 
 | Task | Description | Status | Validation |
 | --- | --- | --- | --- |
-| TASK-HOSTCUT-008 | Create isolated B2C source and build artifact | [ ] | `npm run build` creates B2C `dist/index.html` |
-| TASK-HOSTCUT-009 | Bundle all B2C browser entrypoints | [ ] | No unresolved imports in deployed JavaScript |
-| TASK-HOSTCUT-010 | Configure B2C Pages workflow, package access, CNAME, and DNS | [ ] | Pages deployment succeeds and `b2c.likened.net` returns HTTP 200 |
-| TASK-HOSTCUT-011 | Validate cross-host B2C, B2B, and app links | [ ] | Manual smoke checks resolve each link to its owning host |
+| TASK-HOSTCUT-008 | Create isolated B2C source and build artifact | [x] | `npm run build` creates B2C `dist/index.html` |
+| TASK-HOSTCUT-009 | Bundle all B2C browser entrypoints | [x] | The B2C artifact has no browser-delivered JavaScript imports |
+| TASK-HOSTCUT-010 | Configure B2C Pages workflow, package access, CNAME, and DNS | [~] | GitHub Actions source, workflow, CNAME, DNS verification, and HTTPS are configured; pending successful production deployment |
+| TASK-HOSTCUT-011 | Validate cross-host B2C, B2B, and app links | [~] | Static link checks pass; pending production smoke checks after B2C deployment |
 
 ### Deployment Lessons
 
