@@ -2698,23 +2698,26 @@ main {
 }
 
 .b2b-stripe--deep {
-  color: var(--likened-white);
+  --b2b-foreground: var(--likened-white);
   background: transparent;
 }
 
 .b2b-stripe--light {
-  color: var(--likened-black);
+  --b2b-foreground: var(--likened-black);
   background-color: var(--likened-white);
   box-shadow: 0 0 0 100vmax var(--likened-white);
   clip-path: inset(0 -100vmax);
 }
 
-.b2b-stripe--deep :is(h1, h2, h3, p, li, dt, dd, summary) {
-  color: inherit;
+.b2b-stripe--deep :is(h1, h2, h3, p, li, dt, dd, summary),
+.b2b-stripe--light :is(h1, h2, h3, p, li, dt, dd, summary),
+.b2b-surface--light :is(h1, h2, h3, p, li, dt, dd, summary) {
+  color: var(--b2b-foreground);
 }
 
-.b2b-surface--light :is(h1, h2, h3, p, li, dt, dd, summary) {
-  color: inherit;
+.b2b-surface--light {
+  --b2b-foreground: var(--likened-black);
+  background-color: var(--likened-white);
 }
 
 /* ─── Stats Hook ────────────────────────────────────────────────────────────── */
