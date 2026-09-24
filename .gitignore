@@ -43,7 +43,4 @@ assets/images/*.dot
 supabase/.temp
 
 # Folders
-plans/
-**/deprecated
-scripts/supabase-search/output
 .npmrc
