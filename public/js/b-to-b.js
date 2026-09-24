@@ -166,6 +166,31 @@ const B2B_TESTIMONIAL_OL = Object.freeze([
   }
 ]);
 
+const B2B_ICEBERG_CONTENT = Object.freeze({
+  pain_points: {
+    heading: "Reactive Post & Pray approach",
+    feature_ol: [
+      "Fishing the same pond as every other startup",
+      '"Post & pray" reactive approach',
+      "No control over the quality and time to delivery",
+      "Drowning in screening countless CVs",
+      "Each mis-hire costs 6 months of runway",
+      "Recruitment is a black-box / reliance on external Recruiters"
+    ]
+  },
+  value_adds: {
+    heading: "Headhunt Passive-Search Talent",
+    feature_ol: [
+      "De-risk the team for your next funding raise",
+      "Certainty of quality in a predictable timeframe",
+      "Top 100 longlist in 3 days, not 6 weeks",
+      "90% match accuracy — zero noise",
+      'Access the "Dark Web" of Talent search',
+      "Data-driven decisions"
+    ]
+  }
+});
+
 function createStatLabelSpan(text_val) {
   const stat_label_span = document.createElement("span");
   stat_label_span.className = "stat-label";
@@ -355,6 +380,45 @@ function renderTestimonials() {
 
     testimonial_track.appendChild(testimonial_fragment);
   });
+}
+
+function renderIcebergContent() {
+  const pain_points_list = document.getElementById(
+    "iceberg-pain-points-list"
+  );
+  const value_adds_list = document.getElementById("iceberg-value-adds-list");
+
+  if (
+    !(pain_points_list instanceof HTMLUListElement) ||
+    !(value_adds_list instanceof HTMLUListElement)
+  ) {
+    return;
+  }
+
+  const createFeatureListItem = (feature_text, is_negative) => {
+    const feature_item = document.createElement("li");
+    const feature_text_elm = document.createElement("span");
+
+    feature_item.classList.add("tier-feature");
+    if (is_negative) {
+      feature_item.classList.add("tier-feature--negative");
+    }
+
+    feature_text_elm.textContent = feature_text;
+    feature_item.appendChild(feature_text_elm);
+    return feature_item;
+  };
+
+  pain_points_list.replaceChildren(
+    ...B2B_ICEBERG_CONTENT.pain_points.feature_ol.map((feature_text) =>
+      createFeatureListItem(feature_text, true)
+    )
+  );
+  value_adds_list.replaceChildren(
+    ...B2B_ICEBERG_CONTENT.value_adds.feature_ol.map((feature_text) =>
+      createFeatureListItem(feature_text, false)
+    )
+  );
 }
 
 function initializeStatsCarousel() {
@@ -722,7 +786,7 @@ function initializeB2BIcebergSwitch() {
     const green_rect = document.getElementById("green-rectangle-shape");
 
     if (iceberg_toggle.checked) {
-      iceberg_heading.textContent = "Headhunt Passive-Search Talent";
+      iceberg_heading.textContent = B2B_ICEBERG_CONTENT.value_adds.heading;
       pain_points_panel.hidden = true;
       value_adds_panel.hidden = false;
       sea_rect?.classList.add("hidden");
@@ -731,7 +795,7 @@ function initializeB2BIcebergSwitch() {
       return;
     }
 
-    iceberg_heading.textContent = "Reactive Post & Pray approach";
+    iceberg_heading.textContent = B2B_ICEBERG_CONTENT.pain_points.heading;
     pain_points_panel.hidden = false;
     value_adds_panel.hidden = true;
     sea_rect?.classList.remove("hidden");
@@ -872,6 +936,7 @@ function initializeB2BIcebergSwitch() {
   };
 
   iceberg_toggle.addEventListener("change", syncIcebergState);
+  syncIcebergState();
 
   iceberg_image.addEventListener("click", () => {
     iceberg_toggle.checked = !iceberg_toggle.checked;
@@ -912,6 +977,7 @@ function initializeB2BIcebergSwitch() {
 document.addEventListener("DOMContentLoaded", () => {
   renderStatsCards();
   renderTestimonials();
+  renderIcebergContent();
 
   const stats_counter_observer = new IntersectionObserver(
     (entries, obs) => {

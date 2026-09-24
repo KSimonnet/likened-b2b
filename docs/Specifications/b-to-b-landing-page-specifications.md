@@ -119,7 +119,7 @@ export function animateStatCounter(element, duration = 1500) { … }
 
 ### REQ-BTB-003 — Iceberg toggle heading state
 
-The heading text in `index.html` for the iceberg section (`<h2>` currently rendered as "Headhunt Passive-Search Talent") MUST switch with `#iceberg-toggle` state:
+The iceberg heading rendered into `#iceberg-toggle-heading` by `b-to-b.js` MUST switch with `#iceberg-toggle` state:
 
 - when the slider is on (`#iceberg-toggle:checked`), heading text MUST be **"Headhunt Passive-Search Talent"**
 - when the slider is off (not checked), heading text MUST be **"Reactive Post & Pray approach"**
