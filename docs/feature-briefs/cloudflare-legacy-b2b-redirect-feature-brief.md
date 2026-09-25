@@ -1,9 +1,9 @@
 ---
 goal: "Preserve legacy Likened B2B URLs through Cloudflare while routing visitors to the dedicated B2B GitHub Pages site"
-version: 1.1
+version: 1.2
 date_created: 2026-09-21
 last_updated: 2026-09-26
-status: "In Progress"
+status: "Completed"
 tags: ["feature-brief", "routing", "cloudflare", "github-pages", "discovery"]
 ---
 
@@ -79,7 +79,7 @@ Define and validate edge redirects from `likened.net/b-to-b` legacy URLs to the 
 - [x] `b2b.likened.net` remains bound only to the dedicated B2B Pages repository.
 - [x] B2B product-entry links open `https://likened.net/app/#/dashboard`.
 - [x] A documented rollback can disable or restore the Cloudflare redirect rule.
-- [ ] The B2C landing source is maintained as an unbundled module and a clean checkout generates its browser bundle in `dist/`.
+- [x] The B2C landing source is maintained as an unbundled module and a clean checkout generates its browser bundle in `dist/`.
 
 ### Non-Functional Requirements & Success Metrics
 
@@ -116,7 +116,7 @@ Define and validate edge redirects from `likened.net/b-to-b` legacy URLs to the 
 - `likened.net` nameservers are `dorthy.ns.cloudflare.com` and `justin.ns.cloudflare.com`; Cloudflare became active on 2026-09-19 at 07:21 UTC.
 - The active rule filters `(http.host eq "likened.net" and starts_with(http.request.uri.path, "/b-to-b"))` and returns HTTP 301.
 - The active action is a static redirect to `https://b2b.likened.net/` with path-suffix and query-string preservation disabled.
-- External HTTP validation confirms the canonical B2B destination; the remaining open work is confined to the B2C source/build boundary.
+- External HTTP validation confirms the canonical B2B destination, and the B2C repository now builds its landing bundle from maintainable source after a clean dependency install.
 - GitHub Pages permits one custom domain per Pages site; `b2b.likened.net` belongs to the dedicated B2B repository, while `likened.net` remains assigned to the webapp repository.
 - Static GitHub Pages cannot resolve bare package specifiers at runtime; B2B JavaScript must be compiled before browser delivery or use published browser-resolvable module URLs.
 

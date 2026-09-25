@@ -1,9 +1,9 @@
 ﻿---
 goal: BtoB Landing Page & BtoB Pricing Page
-version: 1.0
+version: 1.1
 date_created: 2026-03-28
-last_updated: 2026-09-21
-status: Draft
+last_updated: 2026-09-26
+status: Active
 feature_brief: docs/feature-brief/b-to-b-landing-page-feature-brief.md
 tags: ['landing-page', 'b2b', 'talent-acquisition', 'marketing']
 ---
@@ -67,25 +67,30 @@ The standalone **"For Individuals"** nav link is intentionally removed because S
 
 ---
 
-## 2. Shared JS Utility — `animateStatCounter`
+## 2. Shared Stat-Counter Animation
 
-### REQ-JS-001 — Extract `animateStatCounter` to `shared-js/`
+### REQ-JS-001 — Package-owned stat-counter action
 
-`animateStatCounter()` MUST be extracted from `public/js/landing-page.js` into a new module at `shared-js/animate-stat-counter.js`. The extracted implementation MUST be identical in behaviour to the current function — no logic changes.
+The counter animation MUST be implemented once as `AnimationManager.actions.animateStatCounter` in `@ksimonnet/utils`. Consumer repositories MUST NOT define a local `animateStatCounter` function or module.
 
-The module MUST export the function as a named export:
+The action MUST accept the standard `AnimationManager` action shape:
 
 ```js
-export function animateStatCounter(element, duration = 1500) { … }
+AnimationManager.actions.animateStatCounter({
+	target: counter_element,
+	parameter: { duration_ms: 1500 }
+});
 ```
 
-### REQ-JS-002 — Refactor `landing-page.js` to import from shared utility
+The action MUST read the numeric target and optional suffix from `target.dataset.target` and `target.dataset.suffix`. `duration_ms` defaults to `1500`.
 
-`public/js/landing-page.js` MUST be updated to import `animateStatCounter` from `shared-js/animate-stat-counter.js` and remove its inline implementation. All existing observable behaviour of `landing-page.js` MUST be preserved exactly — this is a refactor, not a feature change.
+### REQ-JS-002 — Landing page invokes the shared action
 
-### REQ-JS-003 — `b-to-b.js` imports from shared utility
+`public/js/landing-page.js` MUST retain its page-specific `IntersectionObserver` and invoke `AnimationManager.actions.animateStatCounter({ target: entry.target })`. It MUST NOT import or define a local stat-counter helper.
 
-`public/js/b-to-b.js` MUST import `animateStatCounter` from `shared-js/animate-stat-counter.js` and register an `IntersectionObserver` targeting all `[data-target]` elements within `b-to-b.html`. The observer behaviour MUST be identical to that in `landing-page.js` (threshold 0.3, fires once per element).
+### REQ-JS-003 — `b-to-b.js` invokes the shared action
+
+`public/js/b-to-b.js` MUST register an `IntersectionObserver` targeting all `[data-target]` elements within `b-to-b.html` and invoke `AnimationManager.actions.animateStatCounter({ target: entry.target })`. The observer behaviour MUST be identical to that in `landing-page.js` (threshold 0.3, fires once per element).
 
 ---
 
@@ -152,7 +157,7 @@ The section MUST carry the heading: **"Your TA function is drowning. The data pr
 
 #### REQ-BTB-021 — Three stat counters
 
-The section MUST display exactly three quantified statistics. Each MUST animate using `animateStatCounter()` on scroll-into-view (Intersection Observer, threshold 0.3, fires once per element).
+The section MUST display exactly three quantified statistics. Each numeric statistic MUST animate using `AnimationManager.actions.animateStatCounter` on scroll-into-view (Intersection Observer, threshold 0.3, fires once per element).
 
 | # | Display value | Label | Source note |
 |---|---|---|---|

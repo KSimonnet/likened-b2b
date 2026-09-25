@@ -18,9 +18,9 @@ Likened has no public-facing entry point for its enterprise / Talent Acquisition
 - `public/b-to-b.html` — new file; BtoB landing page targeting TA Partners, Heads of Talent, and HR Directors
 - `public/b-to-b-pricing.html` — new file; BtoB pricing page (scope extended from original brief — documented here per governance rule)
 - `public/css/pages/b-to-b.css` — new file; BtoB-specific style overrides (hero copy, stats layout, differentiators grid)
-- `public/js/b-to-b.js` — new file; imports `animateStatCounter` from `shared-js/`
-- `shared-js/animate-stat-counter.js` — new file; `animateStatCounter()` extracted from `landing-page.js`
-- `public/js/landing-page.js` — refactored to import `animateStatCounter` from `shared-js/` (replaces inline implementation)
+- `public/js/b-to-b.js` — new file; invokes `AnimationManager.actions.animateStatCounter`
+- `@ksimonnet/utils/web/classes/modules/animation-manager.js` — owns the reusable stat-counter action
+- `public/js/landing-page.js` — retains page-specific observer orchestration and invokes the package action
 - `scripts/build.js` — updated to copy both BtoB HTML files, bundle `b-to-b-bundle.css`, and build `b-to-b.js`
 
 **Unchanged:**
@@ -57,7 +57,7 @@ Likened has no public-facing entry point for its enterprise / Talent Acquisition
 - **Tech stack stays vanilla** — HTML / CSS / JS + TailwindCSS. No framework (React, Vue, etc.) introduced.
 - **`b-to-b.html` is a new standalone file** — mirrors the HTML skeleton of `index.html` (shared header, footer, dark-mode toggle, `tailwind.min.css`, CSS bundle); content and copy are entirely BtoB.
 - **CSS bundle**: `b-to-b-bundle.css` = same shared stack as `landing-page-bundle.css` (brand-kit + page-style + landing-page.css + slider-switch + modal) **plus** `b-to-b.css`. This avoids forking the shared stylesheet while allowing BtoB-specific overrides.
-- **`animateStatCounter()` is extracted to `shared-js/animate-stat-counter.js`** — the function moves out of `landing-page.js` into a shared utility and is imported by both `landing-page.js` and `b-to-b.js`. This resolves the DRY violation and is a prerequisite for the `b-to-b.js` build step.
+- **Stat-counter animation is an `AnimationManager` action** — `AnimationManager.actions.animateStatCounter` is the single implementation in `@ksimonnet/utils`; B2B and B2C entry points own only their IntersectionObserver orchestration. This resolves the cross-repository DRY violation.
 - **BtoB stats are presented without external source citations** — statistics are first-party industry analysis; no hyperlinks are added (no external source available).
 - **CTA model is purpose-split** — product-entry CTAs use "Sign In" and route to `app/#/dashboard`; the Section 8 discovery CTA uses "Contact Us" and routes to `https://forms.gle/p67EoZcdRRpGnTfZA`; Section 9 reciprocal redirect remains link-only and routes to B2C landing.
 - **BtoB stats (sourced from `b-to-b-commercials.md`)**:
@@ -92,7 +92,7 @@ Likened has no public-facing entry point for its enterprise / Talent Acquisition
 All open questions resolved. No blockers remain before beginning the derivation chain.
 
 - [x] **Stat citations** — stats are presented without source links; no external reference available.
-- [x] **`animateStatCounter` extraction** — extracted to `shared-js/animate-stat-counter.js`; imported by both `landing-page.js` and `b-to-b.js`.
+- [x] **Stat-counter ownership** — implemented once as `AnimationManager.actions.animateStatCounter`; all landing entry points invoke the package action.
 - [x] **Social proof** — testimonial section implemented using available client testimonials in Section J; TAP-specific case study copy can still be added in a future iteration.
 - [x] **CTA destination split** — product-entry CTAs use `app/#/dashboard`; discovery CTA uses `https://forms.gle/p67EoZcdRRpGnTfZA`; reciprocal redirect links to B2C landing.
 

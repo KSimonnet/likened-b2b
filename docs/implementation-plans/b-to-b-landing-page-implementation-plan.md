@@ -6,7 +6,7 @@
 
 ## 0. Implementation Governance (MANDATORY)
 
-- **Scope gate**: Covers `public/b-to-b.html` (new), `public/b-to-b/pricing.html` (new), `public/css/pages/b-to-b.css` (new), `public/js/b-to-b.js` (new), `shared-js/animate-stat-counter.js` (new), `public/js/landing-page.js` (refactor — extract only), and `scripts/build.js` (additive — new entries only). `public/app/`, Chrome extension, back-end, and `pricing.html` are **explicitly out of scope**.
+- **Scope gate**: Covers `public/b-to-b.html` (new), `public/b-to-b/pricing.html` (new), `public/css/pages/b-to-b.css` (new), `public/js/b-to-b.js` (new), the package-owned `AnimationManager.actions.animateStatCounter`, `public/js/landing-page.js` (consumer cutover only), and `scripts/build.js` (additive — new entries only). Chrome extension, back-end, and `pricing.html` are **explicitly out of scope**.
 - **ADRs / Contracts / Anti-Patterns**: Scoped N/A for this feature. The feature is a static marketing page with no complex runtime invariants, no event message passing, and no shared state. All design decisions are captured in the Specifications and Feature Brief.
 
 ---
@@ -17,17 +17,17 @@
 
 ### Scope
 
-New BtoB public-facing entry point converting Talent Acquisition professionals into discovery-call contacts. Two new HTML pages, one new CSS file, one new JS module, one shared JS utility extracted from existing code.
+New BtoB public-facing entry point converting Talent Acquisition professionals into discovery-call contacts. Two new HTML pages, one new CSS file, one new JS module, and one package-owned stat-counter animation action.
 
 **Files to create (new):**
 - `public/b-to-b.html`
 - `public/b-to-b-pricing.html`
 - `public/css/pages/b-to-b.css`
 - `public/js/b-to-b.js`
-- `shared-js/animate-stat-counter.js`
 
 **Files to modify (additive / refactor):**
-- `public/js/landing-page.js` — remove inline `animateStatCounter`, import from shared utility; zero behaviour change
+- `public/js/landing-page.js` — replace local stat-counter calls with `AnimationManager.actions.animateStatCounter`; zero behaviour change
+- `@ksimonnet/utils/web/classes/modules/animation-manager.js` — add the reusable stat-counter action
 - `scripts/build.js` — add 2 HTML copy entries, 1 CSS bundle, 1 JS entry point
 
 **Unchanged:** `public/index.html` content / sections, `public/pricing.html`, `public/app/`, all image assets.
@@ -38,7 +38,7 @@ New BtoB public-facing entry point converting Talent Acquisition professionals i
 |---|---|
 | CSS bundle | `b-to-b-bundle.css` = brand-kit + page-style + landing-page.css + slider-switch + modal + b-to-b.css |
 | CTA behavior | Product-entry CTAs use "Sign In" → `app/#/dashboard`; Section 8 discovery CTA uses "Contact Us" → `https://forms.gle/p67EoZcdRRpGnTfZA`; reciprocal redirect uses "Learn more →" → `../index.html` |
-| `animateStatCounter` | Extracted to `shared-js/animate-stat-counter.js` as named export; imported (not inlined) by both consumers |
+| Stat counter | Implemented once as `AnimationManager.actions.animateStatCounter`; landing entry points own only observer orchestration |
 | Stats 1 & 2 | Animated via `data-target` + `data-suffix="%"` + IntersectionObserver (threshold 0.3, once) |
 | Stat 3 | Static comparison string (not animated) |
 | Testimonial section | Included as Section J with two testimonials in a carousel (Prev/Next, editable page indicator, auto-advance) |
@@ -75,8 +75,8 @@ New BtoB public-facing entry point converting Talent Acquisition professionals i
 
 Write all failing tests before writing source code. Each test MUST fail (RED) before the corresponding implementation step is started.
 
-- [ ] **[Test]** `tests/unit/animate-stat-counter.test.js` — unit test: `animateStatCounter` exported, counts up to `data-target`, stops at target, respects `data-suffix` — **Spec:** REQ-JS-001
-- [ ] **[Test]** `tests/unit/landing-page-refactor.test.js` — smoke test: `landing-page.js` no longer contains inline `animateStatCounter` function body; import statement present — **Spec:** REQ-JS-002
+- [x] **[Test]** `utils/web/classes/tests/animation-manager.test.js` — action reaches `data-target`, respects `data-suffix` and `duration_ms`, and ignores invalid targets — **Spec:** REQ-JS-001
+- [x] **[Test]** consumer build checks — landing entry points bundle calls to `AnimationManager.actions.animateStatCounter` without local helper modules — **Spec:** REQ-JS-002, REQ-JS-003
 - [ ] **[Test]** `tests/build/b-to-b-build.test.js` — build verification: after `npm run build`, `dist/b-to-b.html`, `dist/b-to-b-pricing.html`, `dist/css/b-to-b-bundle.css`, `dist/js/b-to-b.js` all exist — **Spec:** REQ-BUILD-001, REQ-BUILD-002, REQ-BUILD-003
 - [ ] **[Test]** `tests/acceptance/b-to-b-page-structure.test.js` — structural acceptance: `b-to-b.html` contains the 9 required sections (headings match spec exactly), CTA/link destinations match spec, `dark-mode.js` is in `<head>` — **Spec:** REQ-BTB-001–085, REQ-INF-002, REQ-INF-003
 - [ ] **[Test]** `tests/acceptance/b-to-b-pricing-page-structure.test.js` — structural acceptance: `b-to-b-pricing.html` contains 3 tier cards, no billing toggle, guarantee callout block plus reciprocal B2C callout block present with "Learn more →" link to `../pricing.html` — **Spec:** REQ-BTP-001–009
@@ -86,14 +86,14 @@ Write all failing tests before writing source code. Each test MUST fail (RED) be
 
 ---
 
-### Phase IP-1: Extract `animateStatCounter` to `shared-js/`
+### Phase IP-1: Move stat-counter behavior to `AnimationManager.actions`
 
 **Prerequisite:** IP-0 tests are RED.
 
-- [ ] Create `shared-js/animate-stat-counter.js` — copy the `animateStatCounter` function from `public/js/landing-page.js` exactly as-is; export it as a named export — **Spec:** REQ-JS-001
-- [ ] Update `public/js/landing-page.js` — add `import { animateStatCounter } from '../../shared-js/animate-stat-counter.js'`; remove the inline function body — **Spec:** REQ-JS-002
-- [ ] Run `npm test` — `animate-stat-counter.test.js` and `landing-page-refactor.test.js` turn GREEN
-- [ ] Verify the BtoC landing page still behaves identically in browser (manual — animating counters on scroll)
+- [x] Add `AnimationManager.actions.animateStatCounter` to `@ksimonnet/utils` — **Spec:** REQ-JS-001
+- [x] Update landing entry points to invoke the shared action and delete local helper modules — **Spec:** REQ-JS-002, REQ-JS-003
+- [x] Run the package action tests and all consumer builds
+- [ ] Publish `@ksimonnet/utils@2.1.0`, then refresh consumer lockfiles from GitHub Packages
 
 > **Review gate:** Pause for user review before Phase IP-2.
 
@@ -119,7 +119,7 @@ Write all failing tests before writing source code. Each test MUST fail (RED) be
 
 #### IP-3a: `b-to-b.js`
 
-- [ ] Create `public/js/b-to-b.js` — import `animateStatCounter` from `../../shared-js/animate-stat-counter.js`; register `IntersectionObserver` on all `[data-target]` elements, threshold 0.3, fires once per element — **Spec:** REQ-JS-003
+- [x] Create `public/js/b-to-b.js` — register `IntersectionObserver` on all `[data-target]` elements and invoke `AnimationManager.actions.animateStatCounter`, threshold 0.3, fires once per element — **Spec:** REQ-JS-003
 - [ ] Run `npm run build` — verify `dist/js/b-to-b.js` is built
 
 #### IP-3b: `b-to-b.css`
@@ -276,8 +276,8 @@ Build each section in spec order. After each section, open the file in a browser
 
 ### To Be Created
 
-- 🆕 `shared-js/animate-stat-counter.js` — extracted from `landing-page.js`
-- 🆕 `public/js/b-to-b.js` — imports from `shared-js/`; registers IntersectionObserver
+- 🆕 `AnimationManager.actions.animateStatCounter` — package-owned reusable animation action
+- 🆕 `public/js/b-to-b.js` — invokes the package action; registers IntersectionObserver
 - 🆕 `public/css/pages/b-to-b.css` — BtoB-specific layout overrides
 - 🆕 `public/b-to-b.html` — BtoB landing page
 - 🆕 `public/b-to-b-pricing.html` — BtoB pricing page
@@ -289,8 +289,8 @@ Build each section in spec order. After each section, open the file in a browser
 ┌─────────────────────────────────────────────────────────────────────┬───────────┬─────────────┬─────────────────────────────────────────────────────┐
 │ Risk                                                                │ Impact    │ Probability │ Mitigation                                          │
 ├─────────────────────────────────────────────────────────────────────┼───────────┼─────────────┼─────────────────────────────────────────────────────┤
-│ `animateStatCounter` extraction breaks BtoC stats animation         │ 🔴 High   │ 🟡 Medium   │ Unit test before and after extraction; manual smoke  │
-│                                                                     │           │             │ test on `index.html` immediately after IP-1         │
+│ Package action cutover breaks landing stats animation               │ 🔴 High   │ 🟡 Medium   │ Package action tests plus all consumer builds and    │
+│                                                                     │           │             │ landing-page browser smoke tests                     │
 ├─────────────────────────────────────────────────────────────────────┼───────────┼─────────────┼─────────────────────────────────────────────────────┤
 │ CSS class duplicated from shared stack into `b-to-b.css`            │ 🟡 Medium │ 🟡 Medium   │ Audit shared CSS before writing new classes in IP-3b │
 │ (violates CSS-001 / DRY)                                            │           │             │                                                     │
@@ -301,8 +301,8 @@ Build each section in spec order. After each section, open the file in a browser
 │ BtoB pricing page `pricing-tiers-grid` class missing from CSS       │ 🟡 Medium │ 🟡 Medium   │ Check `pricing.html` + `pricing.css` for existing    │
 │ bundle (not included in b-to-b-bundle.css)                         │           │             │ `.pricing-tiers-grid` before assuming it exists      │
 ├─────────────────────────────────────────────────────────────────────┼───────────┼─────────────┼─────────────────────────────────────────────────────┤
-│ `shared-js/` path not resolved by esbuild entry in `build.js`       │ 🔴 High   │ 🟡 Medium   │ Verify esbuild resolves `../../shared-js/` from       │
-│                                                                     │           │             │ `public/js/b-to-b.js` in IP-2 before writing HTML   │
+│ Published package version is not installed by consumers            │ 🔴 High   │ 🟡 Medium   │ Publish `2.1.0`, update consumer lockfiles, then run │
+│                                                                     │           │             │ clean builds before deployment                       │
 └─────────────────────────────────────────────────────────────────────┴───────────┴─────────────┴─────────────────────────────────────────────────────┘
 
 ---

@@ -1,4 +1,3 @@
-import { animateStatCounter } from "./animate-stat-counter.js";
 import { AnimationManager } from "@ksimonnet/utils/web/classes/modules/animation-manager.js";
 import { buildSVGOverlayOn } from "@ksimonnet/utils/web/manip-dom/modules/build-svg-overlay-on.js";
 import { createSVGImage } from "@ksimonnet/utils/web/manip-dom/modules/create-svg-image.js";
@@ -383,9 +382,7 @@ function renderTestimonials() {
 }
 
 function renderIcebergContent() {
-  const pain_points_list = document.getElementById(
-    "iceberg-pain-points-list"
-  );
+  const pain_points_list = document.getElementById("iceberg-pain-points-list");
   const value_adds_list = document.getElementById("iceberg-value-adds-list");
 
   if (
@@ -983,7 +980,9 @@ document.addEventListener("DOMContentLoaded", () => {
     (entries, obs) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          animateStatCounter(entry.target);
+          AnimationManager.actions.animateStatCounter({
+            target: entry.target
+          });
           obs.unobserve(entry.target);
         }
       });

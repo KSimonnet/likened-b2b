@@ -3,12 +3,12 @@ plan_id: PLAN-HOSTCUT-001
 goal: Deploy canonical B2B and B2C landing hosts while preserving the webapp and legacy-route compatibility
 purpose: infrastructure
 component: host-routing
-version: 1.3
+version: 1.4
 date_created: 2026-09-19
 last_updated: 2026-09-26
 owner: Webapp Platform
-status: in-progress
-status_badge_label: In Progress
+status: completed
+status_badge_label: Completed
 supersedes: null
 superseded_by: null
 tags: [migration, dns, routing, github-pages, landing-page]
@@ -16,9 +16,9 @@ tags: [migration, dns, routing, github-pages, landing-page]
 
 # Introduction
 
-![Status: In Progress](https://img.shields.io/badge/status-In%20Progress-yellow)
+![Status: Completed](https://img.shields.io/badge/status-Completed-green)
 
-This implementation plan deploys the B2B and B2C marketing sites from dedicated repositories while `KSimonnet/likened-webapp` continues to own the web application at `https://likened.net/app/`. The B2B deployment is complete; the B2C source/artifact remediation is in progress.
+This implementation plan deploys the B2B and B2C marketing sites from dedicated repositories while `KSimonnet/likened-webapp` continues to own the web application at `https://likened.net/app/`. Both landing repositories now preserve maintainable source and generate their browser artifacts during the build.
 
 ## Human-Readable Overview
 
@@ -157,7 +157,7 @@ Machine task table:
 ### Implementation Phase 4 — B2C Replication and Source Remediation
 
 - **PHASE-HOSTCUT-004 Goal:** Publish `likened-webapp/public/index.html` and its B2C companion pages as an independent GitHub Pages site at `b2c.likened.net` without changing the product application at `likened.net/app/`.
-- **Current baseline (2026-09-26):** The public hosts return successfully, but `likened-b2c/public/js/landing-page.js` is a generated bundle copied into the source tree. `likened-b2c/scripts/build.js` only copies `public/`, and its Pages workflow does not install dependencies. Package and bundler dependencies have been declared locally; restoring source modules, adding bundling, and updating CI remain in progress.
+- **Current baseline (2026-09-26):** The public hosts return successfully. `likened-b2c/public/js/landing-page.js` is restored as unbundled source with repository-local helpers; `scripts/build.js` emits `dist/js/landing-page.js` through esbuild; and the Pages workflow authorizes packages, runs `npm ci`, builds, and uploads only `dist/`.
 - **Precondition:** Create or designate a dedicated `KSimonnet/likened-b2c` repository and keep `likened-webapp` as the source of truth until the B2C artifact is independently reproducible.
 
 1. Copy the B2C landing source, pricing page, referenced `assets/`, vendor scripts, and the final B2C CSS bundle into `likened-b2c/public/`. Keep its `CNAME` file at repository root with only `b2c.likened.net`.
@@ -179,11 +179,11 @@ Machine task table:
 
 | Task | Description | Status | Validation |
 | --- | --- | --- | --- |
-| TASK-HOSTCUT-008 | Restore an isolated, maintainable B2C source tree | [ ] | `public/js/landing-page.js` contains source imports and no generated bundler runtime |
-| TASK-HOSTCUT-009 | Bundle B2C landing JavaScript into the deployment artifact | [ ] | `npm ci && npm run build` creates `dist/js/landing-page.js` with no unresolved imports |
+| TASK-HOSTCUT-008 | Restore an isolated, maintainable B2C source tree | [x] | `public/js/landing-page.js` contains source imports and no generated bundler runtime |
+| TASK-HOSTCUT-009 | Bundle B2C landing JavaScript into the deployment artifact | [x] | `npm ci && npm run build` creates `dist/js/landing-page.js` with no unresolved imports |
 | TASK-HOSTCUT-010 | Configure B2C Pages workflow, package access, CNAME, and DNS | [x] | GitHub Actions workflow run `35665223787` deployed successfully; `b2c.likened.net` and its pricing page return HTTP 200 |
 | TASK-HOSTCUT-011 | Validate cross-host B2C, B2B, and app links | [x] | Production smoke checks confirm B2C, B2B, and app hosts return HTTP 200; legacy B2B resolves to the canonical B2B host |
-| TASK-HOSTCUT-012 | Install locked B2C dependencies before the Pages build | [ ] | Workflow runs package authorization, `npm ci`, and `npm run build` before artifact upload |
+| TASK-HOSTCUT-012 | Install locked B2C dependencies before the Pages build | [x] | Workflow runs package authorization, `npm ci`, and `npm run build` before artifact upload |
 
 ### Deployment Lessons
 
@@ -261,8 +261,8 @@ Machine task table:
 - [x] The webapp remains deployed independently at `https://likened.net/app/`.
 - [x] Production B2B page and app-entry navigation pass manual smoke testing.
 - [x] `b2c.likened.net` is deployed through an independent self-contained Pages artifact.
-- [ ] `likened-b2c/public/js/landing-page.js` is restored as an unbundled source entry point.
-- [ ] A clean B2C checkout installs locked dependencies and generates `dist/js/landing-page.js` with no unresolved imports.
+- [x] `likened-b2c/public/js/landing-page.js` is restored as an unbundled source entry point.
+- [x] A clean B2C checkout installs locked dependencies and generates `dist/js/landing-page.js` with no unresolved imports.
 
 ## 10. Change Log
 
@@ -273,6 +273,7 @@ Machine task table:
 | 2026-09-21 | 1.1 | Reframed B2B deployment as an independent GitHub Pages build while preserving the webapp application host |
 | 2026-09-22 | 1.2 | Recorded completed B2B migration and added the B2C replication runbook, Pages deployment checks, package-auth guidance, and failure lessons |
 | 2026-09-26 | 1.3 | Reopened B2C source/build tasks after identifying that a generated landing bundle had been committed as source; added source/artifact contract ownership and clean-build validation |
+| 2026-09-26 | 1.4 | Restored the B2C source entry point and local helpers, added esbuild output and CI dependency installation, and passed the clean-install source/artifact gate |
 
 ## 11. References
 
