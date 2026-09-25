@@ -27,11 +27,6 @@ credentials.json
 # stryker temp files
 .stryker-tmp
 
-# Generated assets
-assets/images/*.png
-assets/images/*.svg
-assets/images/*.dot
-
 # Large media files (distribute separately)
 
 

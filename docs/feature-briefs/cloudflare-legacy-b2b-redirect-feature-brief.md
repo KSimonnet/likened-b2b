@@ -42,7 +42,7 @@ Define and validate edge redirects from `likened.net/b-to-b` legacy URLs to the 
 
 **Files affected:**
 - `../CNAME` - declares the `b2b.likened.net` custom domain for the dedicated B2B Pages site.
-- `../index.html` and `../pricing.html` - retain absolute application-entry URLs that point to the webapp host.
+- `../public/index.html` and `../public/pricing.html` - retain absolute application-entry URLs that point to the webapp host.
 - Cloudflare Redirect Rule `Redirect /b-to-b to b2b.likened.net` - edge configuration requiring destination-path validation.
 - `../../likened-webapp/scripts/build.js` - retains only the legacy compatibility behavior required by the webapp host.
 
@@ -174,6 +174,6 @@ All current discovery questions are resolved.
 
 - Cloudflare dashboard rule: `Redirect /b-to-b to b2b.likened.net`
 - `CNAME` - B2B GitHub Pages custom-domain declaration
-- `index.html` - B2B landing page and application-entry links
-- `pricing.html` - B2B pricing page and application-entry links
+- `public/index.html` - B2B landing page and application-entry links
+- `public/pricing.html` - B2B pricing page and application-entry links
 - `../../likened-webapp/public/app/` - retained webapp source and deployment boundary

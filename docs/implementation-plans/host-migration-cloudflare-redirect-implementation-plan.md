@@ -37,8 +37,8 @@ This plan changes B2B build ownership, GitHub Pages deployment, static routing, 
 **Files affected:**
 - `../likened-b2b/scripts/build.js` — build B2B HTML, assets, CSS, and JavaScript into an isolated `dist/` artifact.
 - `../likened-b2b/.github/workflows/deploy-pages.yml` — build and deploy the B2B `dist/` artifact with GitHub Actions Pages.
-- `../likened-b2b/index.html` — use absolute webapp targets for application entry links.
-- `../likened-b2b/js/b-to-b.js` — import only browser-resolvable local modules that the B2B build bundles.
+- `../likened-b2b/public/index.html` — use absolute webapp targets for application entry links.
+- `../likened-b2b/public/js/b-to-b.js` — import only browser-resolvable local modules that the B2B build bundles.
 - `scripts/build.js` — retain only apex, B2C, and legacy B2B compatibility routing.
 - `public/routing/apex-to-b2b-redirect.html` — static apex redirect document to canonical B2B host.
 - `public/routing/legacy-b-to-b-to-b2b-redirect.html` — compatibility redirect for legacy B2B root path.
@@ -136,7 +136,7 @@ Machine task table:
 - **PHASE-HOSTCUT-003 Goal:** Establish the B2B repository build and deploy it as an independent GitHub Pages site.
 - **Preconditions:** The B2B source and assets are present in `likened-b2b`; GitHub Pages is configured to use GitHub Actions.
 - **Completion Criteria:** `likened-b2b` builds a self-contained `dist/` artifact, deploys it with GitHub Actions, and B2B CTA links reach the unchanged webapp host.
-- **Verification Commands:** `npm run build`; `rg "https://likened\.net/app/#/dashboard" index.html`; GitHub Actions Pages deployment status.
+- **Verification Commands:** `npm run build`; `rg "https://likened\.net/app/#/dashboard" public/index.html`; GitHub Actions Pages deployment status.
 
 Human checklist:
 
@@ -220,8 +220,8 @@ Machine task table:
 - **FILE-HOSTCUT-001**: `../likened-b2b/package.json` — defines the B2B build and verification commands.
 - **FILE-HOSTCUT-002**: `../likened-b2b/scripts/build.js` — emits the deployable B2B `dist/` artifact.
 - **FILE-HOSTCUT-003**: `../likened-b2b/.github/workflows/deploy-pages.yml` — builds and deploys the B2B Pages artifact.
-- **FILE-HOSTCUT-004**: `../likened-b2b/index.html` — B2B landing page with absolute application-entry links.
-- **FILE-HOSTCUT-005**: `../likened-b2b/js/b-to-b.js` — B2B entry point compiled by the B2B build.
+- **FILE-HOSTCUT-004**: `../likened-b2b/public/index.html` — B2B landing page with absolute application-entry links.
+- **FILE-HOSTCUT-005**: `../likened-b2b/public/js/b-to-b.js` — B2B entry point compiled by the B2B build.
 - **FILE-HOSTCUT-006**: `scripts/build.js` — retains apex, B2C, and compatibility-path output behavior.
 
 ## 7. Testing
@@ -235,7 +235,7 @@ Machine task table:
 | Test ID | Test Type | Source IDs Covered | Command | Pass Criteria |
 | --- | --- | --- | --- | --- |
 | TEST-HOSTCUT-001 | build | REQ-002, PAT-001 | `cd ../likened-b2b && npm run build` | Build exits 0 and creates the B2B `dist/` artifact with a bundled B2B JavaScript entry point |
-| TEST-HOSTCUT-002 | static-content | REQ-004, CON-001 | `rg "https://likened\.net/app/#/dashboard" ../likened-b2b/index.html ../likened-b2b/pricing.html` | B2B application-entry links target the unchanged webapp host |
+| TEST-HOSTCUT-002 | static-content | REQ-004, CON-001 | `rg "https://likened\.net/app/#/dashboard" ../likened-b2b/public/index.html ../likened-b2b/public/pricing.html` | B2B application-entry links target the unchanged webapp host |
 | TEST-HOSTCUT-003 | static-content | REQ-002 | `rg "@ksimonnet/|^import " ../likened-b2b/dist/js/b-to-b.js` | No unresolved package or source import remains in browser-delivered B2B JavaScript |
 | TEST-HOSTCUT-004 | deployment-smoke | REQ-002, REQ-004 | Manual URL checks in production | `b2b.likened.net` renders the B2B page and application-entry links open `likened.net/app/#/dashboard` |
 
