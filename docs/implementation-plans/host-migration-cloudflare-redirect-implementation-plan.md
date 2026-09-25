@@ -1,11 +1,11 @@
 ---
 plan_id: PLAN-HOSTCUT-001
-goal: Deploy B2B as a dedicated GitHub Pages site while preserving the webapp and legacy-route compatibility
+goal: Deploy canonical B2B and B2C landing hosts while preserving the webapp and legacy-route compatibility
 purpose: infrastructure
 component: host-routing
-version: 1.2
+version: 1.3
 date_created: 2026-09-19
-last_updated: 2026-09-22
+last_updated: 2026-09-26
 owner: Webapp Platform
 status: in-progress
 status_badge_label: In Progress
@@ -18,7 +18,7 @@ tags: [migration, dns, routing, github-pages, landing-page]
 
 ![Status: In Progress](https://img.shields.io/badge/status-In%20Progress-yellow)
 
-This implementation plan deploys the B2B landing page from the dedicated `KSimonnet/likened-b2b` repository to GitHub Pages, while `KSimonnet/likened-webapp` continues to own the web application at `https://likened.net/app/`.
+This implementation plan deploys the B2B and B2C marketing sites from dedicated repositories while `KSimonnet/likened-webapp` continues to own the web application at `https://likened.net/app/`. The B2B deployment is complete; the B2C source/artifact remediation is in progress.
 
 ## Human-Readable Overview
 
@@ -30,7 +30,7 @@ This plan changes B2B build ownership, GitHub Pages deployment, static routing, 
 
 ## 0. Context Snapshot
 
-**Derivation flow:** Feature Brief → Specifications → UL → ADRs → Contracts → Anti-Patterns → **this plan** → Tests → Implementation
+**Derivation flow:** Feature Brief → Specifications → UL → ADR decision (skipped: committed, reversible build correction) → Contracts → Anti-Patterns → **this plan** → Tests → Implementation
 
 **Scope:** Implement a dedicated B2B GitHub Pages deployment at `b2b.likened.net`, preserve the existing webapp deployment at `likened.net`, and retain legacy `/b-to-b` compatibility redirects.
 
@@ -73,19 +73,19 @@ This plan changes B2B build ownership, GitHub Pages deployment, static routing, 
 | TRACE-005 | adr | ADR-STYLE-004 | docs/architecture/styling-principles-adr.md | CSS architecture remains centralized and not bypassed during host split. |
 | TRACE-006 | contract | Contract-CSS-011 | docs/contracts/styling-principles-contracts.md | No inline style behavior is introduced while adding metadata/routing pages. |
 | TRACE-007 | anti-pattern | Anti-Pattern-STYLE-003 | docs/anti-patterns/styling-principles-anti-patterns.md | Prevent cross-page bundle composition drift while remapping outputs. |
+| TRACE-008 | specification | REQ-B2C-011–013, CON-B2C-006 | docs/Specifications/host-migration-cloudflare-redirect-specifications.md | Defines the B2C source entry point, generated bundle, and clean CI build boundary. |
+| TRACE-009 | contract | Contract-B2C-002 | docs/contracts/host-migration-cloudflare-redirect-contracts.md | Enforces source/artifact separation. |
+| TRACE-010 | anti-pattern | Anti-Pattern-HOSTCUT-004 | docs/anti-patterns/host-migration-cloudflare-redirect-anti-patterns.md | Records the generated-bundle-as-source migration failure. |
 
-## 2. Requirements & Constraints (Execution-Scoped)
+## 2. Execution Gates
 
-- **REQ-001**: Apex output path `dist/index.html` must resolve as a redirect entrypoint to canonical B2B host.
-- **REQ-002**: The `likened-b2b` workflow must build and deploy a self-contained B2B Pages artifact to `b2b.likened.net`.
-- **REQ-003**: Legacy compatibility paths under `/b-to-b/` must resolve through redirect pages.
-- **REQ-004**: Every B2B application-entry link must target `https://likened.net/app/#/dashboard`.
-- **SEC-001**: Redirect pages must not include dynamic user-controlled inputs.
-- **OPS-001**: Build must remain green using existing command `npm run build`.
-- **CON-001**: No app routing changes under `/app/#/dashboard`.
-- **CON-002**: No modifications to Supabase credentials, auth flow, or runtime data paths.
-- **GUD-001**: Do not relocate the webapp or its `/app` route into `likened-b2b`.
-- **PAT-001**: Use an esbuild-based B2B build so package and local-module imports resolve before browser delivery.
+This plan does not redefine requirements or constraints. Execution is governed by:
+
+- `REQ-ROUT-001–004` and `CON-ROUT-001` for the fixed Cloudflare redirect.
+- `REQ-B2B-001–002` and `CON-B2B-001` for the canonical B2B Pages host and application-entry boundary.
+- `REQ-B2C-001–013` and `CON-B2C-001–006` for the independently reproducible B2C Pages host.
+- `Contract-ROUT-001`, `Contract-B2C-001`, and `Contract-B2C-002` for hard runtime and build invariants.
+- `Anti-Pattern-HOSTCUT-001–004` for confirmed migration failure modes.
 
 ## 3. Implementation Steps (TDD Workflow)
 
@@ -150,39 +150,40 @@ Machine task table:
 
 | Task ID | Description | target_path | target_symbol | operation | dependencies | source_spec_ids | status | blocked_reason | validation_command | expected_result | rollback_step |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| TASK-HOSTCUT-005 | Add B2B esbuild entry configuration and include imported helper modules in the B2B source tree | ../likened-b2b/package.json; ../likened-b2b/scripts/build.js; ../likened-b2b/public/js | build | update | TASK-HOSTCUT-004 | REQ-002, PAT-001 | completed | null | npm run build && ! rg "^import " dist/js/b-to-b.js | Build exits 0 and `dist/js/b-to-b.js` contains no unresolved browser imports | Restore standalone static-copy build and local helper layout |
-| TASK-HOSTCUT-006 | Deploy B2B `dist/` through GitHub Actions Pages with `b2b.likened.net` as its custom domain | ../likened-b2b/.github/workflows/deploy-pages.yml; ../likened-b2b/CNAME | GitHub Pages workflow | create | TASK-HOSTCUT-005 | REQ-002 | completed | null | GitHub Actions deployment status and `curl -sS -o /dev/null -w "%{http_code}" https://b2b.likened.net/` | Pages deployment succeeds and B2B returns HTTP 200 | Disable workflow and restore previous Pages source |
-| TASK-HOSTCUT-007 | Convert B2B application-entry links to the preserved webapp URL and validate production navigation | ../likened-b2b/public/index.html; ../likened-b2b/public/pricing.html | application-entry anchors | update | TASK-HOSTCUT-006 | REQ-004, CON-001 | completed | null | rg "https://likened\.net/app/#/dashboard" public/index.html public/pricing.html | Every application-entry link opens the existing webapp | Restore prior link targets |
+| TASK-HOSTCUT-005 | Add B2B esbuild entry configuration and include imported helper modules in the B2B source tree | ../likened-b2b/package.json; ../likened-b2b/scripts/build.js; ../likened-b2b/public/js | build | update | TASK-HOSTCUT-004 | REQ-B2B-001 | completed | null | npm run build && ! rg "^import " dist/js/b-to-b.js | Build exits 0 and `dist/js/b-to-b.js` contains no unresolved browser imports | Restore standalone static-copy build and local helper layout |
+| TASK-HOSTCUT-006 | Deploy B2B `dist/` through GitHub Actions Pages with `b2b.likened.net` as its custom domain | ../likened-b2b/.github/workflows/deploy-pages.yml; ../likened-b2b/CNAME | GitHub Pages workflow | create | TASK-HOSTCUT-005 | REQ-B2B-001 | completed | null | GitHub Actions deployment status and `curl -sS -o /dev/null -w "%{http_code}" https://b2b.likened.net/` | Pages deployment succeeds and B2B returns HTTP 200 | Disable workflow and restore previous Pages source |
+| TASK-HOSTCUT-007 | Convert B2B application-entry links to the preserved webapp URL and validate production navigation | ../likened-b2b/public/index.html; ../likened-b2b/public/pricing.html | application-entry anchors | update | TASK-HOSTCUT-006 | REQ-B2B-002, CON-B2B-001 | completed | null | rg "https://likened\.net/app/#/dashboard" public/index.html public/pricing.html | Every application-entry link opens the existing webapp | Restore prior link targets |
 
-### Implementation Phase 4 — B2C Replication Runbook
+### Implementation Phase 4 — B2C Replication and Source Remediation
 
 - **PHASE-HOSTCUT-004 Goal:** Publish `likened-webapp/public/index.html` and its B2C companion pages as an independent GitHub Pages site at `b2c.likened.net` without changing the product application at `likened.net/app/`.
-- **Current baseline (2026-09-22):** `b2b.likened.net`, `b2c.likened.net`, `b2c.likened.net/pricing.html`, and `likened.net/app/` return HTTP 200. The B2C Pages workflow completed successfully with the verified `b2c.likened.net` custom domain and enforced HTTPS. The legacy B2B URL resolves to `https://b2b.likened.net/`.
+- **Current baseline (2026-09-26):** The public hosts return successfully, but `likened-b2c/public/js/landing-page.js` is a generated bundle copied into the source tree. `likened-b2c/scripts/build.js` only copies `public/`, and its Pages workflow does not install dependencies. Package and bundler dependencies have been declared locally; restoring source modules, adding bundling, and updating CI remain in progress.
 - **Precondition:** Create or designate a dedicated `KSimonnet/likened-b2c` repository and keep `likened-webapp` as the source of truth until the B2C artifact is independently reproducible.
 
 1. Copy the B2C landing source, pricing page, referenced `assets/`, vendor scripts, and the final B2C CSS bundle into `likened-b2c/public/`. Keep its `CNAME` file at repository root with only `b2c.likened.net`.
 2. Make every B2C landing link host-correct. Links to the product remain `https://likened.net/app/...`; links to the B2B journey use `https://b2b.likened.net/`; do not retain relative links that resolve against the new B2C host incorrectly.
-3. Build `dist/` from the B2C repository's committed sources. The Pages workflow must upload `dist/`, never a source folder that bypasses generated CSS or JavaScript.
-4. Bundle every browser entrypoint that has `import` statements with esbuild as an IIFE or ESM bundle before it reaches `dist/`. Do not ship raw source containing bare package specifiers or imports into absent sibling directories.
-5. Keep CI self-contained. Do not check out another private repository merely to build a Pages artifact. If a package is needed, declare it, lock it, and configure GitHub Packages authentication.
-6. For private GitHub Packages, use one authentication model consistently: either grant the workflow `GITHUB_TOKEN` package read access through the package's **Manage Actions access** settings, or use an Actions secret named `NODE_AUTH_TOKEN` containing a classic PAT with `read:packages` and `repo`. Add a fail-fast `npm view <package> version --registry=https://npm.pkg.github.com` check before `npm ci`.
-7. Add a GitHub Actions Pages workflow with `contents: read`, `pages: write`, `id-token: write`, and `packages: read` when package installation is required. Include `workflow_dispatch` for recovery deployments. Use `actions/checkout@v5` to avoid Node 20 action-runtime deprecation warnings.
-8. Set the repository Pages Source to **GitHub Actions**, add `b2c.likened.net` as its custom domain, and complete DNS verification. A successful DNS check alone is insufficient: verify a completed Pages deployment and HTTP 200 response.
-9. Validate before cutover and after every deployment:
+3. Keep `public/js/landing-page.js` as the unbundled source entry point. Never copy a generated IIFE from another repository into `public/js/`.
+4. Build `dist/` from committed B2C sources. Bundle `public/js/landing-page.js` into `dist/js/landing-page.js`; upload `dist/`, never raw source.
+5. Keep CI self-contained. Declare and lock every package instead of checking out a sibling repository.
+6. Configure private package authorization before `npm ci`, then install locked dependencies before every build.
+7. Keep the GitHub Pages workflow on GitHub Actions and upload only `dist/`.
+8. Validate before cutover and after every deployment:
 	```bash
 	npm ci
 	npm run build
-	! rg "^import " dist/js
+	rg "^import " public/js/landing-page.js
+	! rg "^import " dist/js/landing-page.js
 	curl -sS -o /dev/null -w "b2c=%{http_code}\n" https://b2c.likened.net/
 	curl -sS -o /dev/null -w "app=%{http_code}\n" https://likened.net/app/
 	```
 
 | Task | Description | Status | Validation |
 | --- | --- | --- | --- |
-| TASK-HOSTCUT-008 | Create isolated B2C source and build artifact | [x] | `npm run build` creates B2C `dist/index.html` |
-| TASK-HOSTCUT-009 | Bundle all B2C browser entrypoints | [x] | The B2C artifact has no browser-delivered JavaScript imports |
+| TASK-HOSTCUT-008 | Restore an isolated, maintainable B2C source tree | [ ] | `public/js/landing-page.js` contains source imports and no generated bundler runtime |
+| TASK-HOSTCUT-009 | Bundle B2C landing JavaScript into the deployment artifact | [ ] | `npm ci && npm run build` creates `dist/js/landing-page.js` with no unresolved imports |
 | TASK-HOSTCUT-010 | Configure B2C Pages workflow, package access, CNAME, and DNS | [x] | GitHub Actions workflow run `35665223787` deployed successfully; `b2c.likened.net` and its pricing page return HTTP 200 |
 | TASK-HOSTCUT-011 | Validate cross-host B2C, B2B, and app links | [x] | Production smoke checks confirm B2C, B2B, and app hosts return HTTP 200; legacy B2B resolves to the canonical B2B host |
+| TASK-HOSTCUT-012 | Install locked B2C dependencies before the Pages build | [ ] | Workflow runs package authorization, `npm ci`, and `npm run build` before artifact upload |
 
 ### Deployment Lessons
 
@@ -191,6 +192,7 @@ Machine task table:
 - `http-server -o` opens the local preview browser. Keep `npm run serve` simple; a custom server wrapper was unnecessary and caused avoidable debugging churn.
 - Do not assume cache freshness when checking generated CSS. Rebuild `dist/`, use no-cache preview settings where possible, or cache-bust the asset URL during verification.
 - Keep deployable artifacts self-contained. Copy or generate all CSS, local assets, and bundled JavaScript from files available in the deployment repository.
+- A browser-executable generated bundle is not a maintainable source entry point. Preserve source imports under `public/js/` and emit bundled code only under `dist/js/`.
 
 ## 4. Alternatives
 
@@ -234,10 +236,11 @@ Machine task table:
 
 | Test ID | Test Type | Source IDs Covered | Command | Pass Criteria |
 | --- | --- | --- | --- | --- |
-| TEST-HOSTCUT-001 | build | REQ-002, PAT-001 | `cd ../likened-b2b && npm run build` | Build exits 0 and creates the B2B `dist/` artifact with a bundled B2B JavaScript entry point |
-| TEST-HOSTCUT-002 | static-content | REQ-004, CON-001 | `rg "https://likened\.net/app/#/dashboard" ../likened-b2b/public/index.html ../likened-b2b/public/pricing.html` | B2B application-entry links target the unchanged webapp host |
-| TEST-HOSTCUT-003 | static-content | REQ-002 | `rg "@ksimonnet/|^import " ../likened-b2b/dist/js/b-to-b.js` | No unresolved package or source import remains in browser-delivered B2B JavaScript |
-| TEST-HOSTCUT-004 | deployment-smoke | REQ-002, REQ-004 | Manual URL checks in production | `b2b.likened.net` renders the B2B page and application-entry links open `likened.net/app/#/dashboard` |
+| TEST-HOSTCUT-001 | build | REQ-B2B-001 | `cd ../likened-b2b && npm run build` | Build exits 0 and creates the B2B `dist/` artifact with a bundled B2B JavaScript entry point |
+| TEST-HOSTCUT-002 | static-content | REQ-B2B-002, CON-B2B-001 | `rg "https://likened\.net/app/#/dashboard" ../likened-b2b/public/index.html ../likened-b2b/public/pricing.html` | B2B application-entry links target the unchanged webapp host |
+| TEST-HOSTCUT-003 | static-content | REQ-B2B-001 | `rg "@ksimonnet/|^import " ../likened-b2b/dist/js/b-to-b.js` | No unresolved package or source import remains in browser-delivered B2B JavaScript |
+| TEST-HOSTCUT-004 | deployment-smoke | REQ-B2B-001–002 | Manual URL checks in production | `b2b.likened.net` renders the B2B page and application-entry links open `likened.net/app/#/dashboard` |
+| TEST-HOSTCUT-005 | build integration | REQ-B2C-011–013, CON-B2C-003, CON-B2C-006 | `cd ../likened-b2c && npm ci && npm run build && rg '^import ' public/js/landing-page.js && ! rg '^import ' dist/js/landing-page.js` | A clean checkout builds the browser artifact from maintainable source without sibling repositories |
 
 ## 8. Risks & Assumptions
 
@@ -258,6 +261,8 @@ Machine task table:
 - [x] The webapp remains deployed independently at `https://likened.net/app/`.
 - [x] Production B2B page and app-entry navigation pass manual smoke testing.
 - [x] `b2c.likened.net` is deployed through an independent self-contained Pages artifact.
+- [ ] `likened-b2c/public/js/landing-page.js` is restored as an unbundled source entry point.
+- [ ] A clean B2C checkout installs locked dependencies and generates `dist/js/landing-page.js` with no unresolved imports.
 
 ## 10. Change Log
 
@@ -267,26 +272,32 @@ Machine task table:
 | 2026-09-19 | 1.0 | Marked completed tasks for implemented build remap, redirects, canonical tags, and reciprocal link updates |
 | 2026-09-21 | 1.1 | Reframed B2B deployment as an independent GitHub Pages build while preserving the webapp application host |
 | 2026-09-22 | 1.2 | Recorded completed B2B migration and added the B2C replication runbook, Pages deployment checks, package-auth guidance, and failure lessons |
+| 2026-09-26 | 1.3 | Reopened B2C source/build tasks after identifying that a generated landing bundle had been committed as source; added source/artifact contract ownership and clean-build validation |
 
 ## 11. References
 
 ### Specifications
+- [docs/Specifications/host-migration-cloudflare-redirect-specifications.md](../Specifications/host-migration-cloudflare-redirect-specifications.md) — canonical routing, B2C host, and source/artifact requirements
 - [docs/specifications/b-to-b-landing-page-specifications.md](../specifications/b-to-b-landing-page-specifications.md) — source of B2B build and cross-linking requirements
 - [docs/specifications/landing-page-and-pricing-specifications.md](../specifications/landing-page-and-pricing-specifications.md) — source of B2C reciprocal redirect behavior and additive constraints
 
 ### Ubiquitous Language
+- [docs/ubiquitous-language/host-migration-cloudflare-redirect-ul.md](../ubiquitous-language/host-migration-cloudflare-redirect-ul.md) — canonical host and source/artifact terminology
 - [docs/ubiquitous-language/registry-ul-term-ownership.md](../ubiquitous-language/registry-ul-term-ownership.md) — naming consistency reference for journey and host terms
 
 ### Architecture Decisions
 - [docs/architecture/styling-principles-adr.md](../architecture/styling-principles-adr.md) — CSS architecture constraints preserved during routing changes
 
 ### Contracts
+- [docs/contracts/host-migration-cloudflare-redirect-contracts.md](../contracts/host-migration-cloudflare-redirect-contracts.md) — routing, host isolation, and B2C source/artifact contracts
 - [docs/contracts/styling-principles-contracts.md](../contracts/styling-principles-contracts.md) — CSS-first and tokenized styling rules that remain enforced
 
 ### Anti-Patterns
+- [docs/anti-patterns/host-migration-cloudflare-redirect-anti-patterns.md](../anti-patterns/host-migration-cloudflare-redirect-anti-patterns.md) — confirmed landing-host migration failures
 - [docs/anti-patterns/styling-principles-anti-patterns.md](../anti-patterns/styling-principles-anti-patterns.md) — cross-page drift anti-pattern avoided during remapping
 
 ### Related Feature Brief
+- [docs/feature-briefs/cloudflare-legacy-b2b-redirect-feature-brief.md](../feature-briefs/cloudflare-legacy-b2b-redirect-feature-brief.md) — migration discovery boundary
 - [docs/feature-briefs/b-to-b-landing-page-feature-brief.md](../feature-briefs/b-to-b-landing-page-feature-brief.md) — historical context for B2B page lineage
 
 ### Further Reading

@@ -1,8 +1,9 @@
 ---
 goal: "Preserve legacy Likened B2B URLs through Cloudflare while routing visitors to the dedicated B2B GitHub Pages site"
-version: 1.0
+version: 1.1
 date_created: 2026-09-21
-status: "Planned"
+last_updated: 2026-09-26
+status: "In Progress"
 tags: ["feature-brief", "routing", "cloudflare", "github-pages", "discovery"]
 ---
 
@@ -19,7 +20,7 @@ Trigger justification: Preserving externally shared B2B URLs is a user-facing ro
 - [x] **Ubiquitous Language** - Legacy route, canonical B2B route, and application-entry route span Cloudflare, `likened-b2b`, and `likened-webapp`.
 - [ ] **ADRs** - The dedicated B2B Pages host and Cloudflare nameserver migration are already committed decisions; this brief does not introduce a new reversible architecture decision.
 - [x] **Contracts** - The exact legacy-path-to-canonical-path mapping is non-obvious and applies to the root and pricing legacy callers; an incorrect map produces a difficult edge-only routing failure.
-- [ ] **Anti-Patterns** - No documented implementation violation has been established; the current rule requires destination validation before classifying it as a violation.
+- [x] **Anti-Patterns** - The migrations produced confirmed deployment failures and later committed a generated B2C JavaScript bundle as its source entry point.
 - [x] **Implementation Plan** - The work spans DNS and edge configuration, B2B Pages deployment, route validation, and rollback sequencing.
 
 ---
@@ -34,17 +35,22 @@ Trigger justification: Preserving externally shared B2B URLs is a user-facing ro
 
 ### Scope
 
-Define and validate edge redirects from `likened.net/b-to-b` legacy URLs to the B2B Pages site, including query-string preservation and B2B links back to the existing webapp application route.
+Define and validate edge redirects from `likened.net/b-to-b` legacy URLs to the B2B Pages site, including explicit query-string discard and B2B links back to the existing webapp application route. The artifact chain also records the follow-on B2C Pages migration because both landing hosts share source, build, deployment, and application-route ownership boundaries.
 
 **Scope gate:** The webapp source, deployment, application routes, authentication, and data services are out of scope. This brief does not redesign B2B content or prescribe the final redirect expression.
 
-**Success boundary:** A visitor opening a supported legacy B2B URL reaches the equivalent intended B2B content without a loop, 404, loss of query parameters, or accidental navigation away from `likened.net/app/` for application-entry links.
+**Success boundary:** A visitor opening a supported legacy B2B URL reaches the fixed B2B landing URL without a loop or 404. Path suffixes and query parameters are deliberately discarded, while application-entry links continue to reach `likened.net/app/`.
+
+**Current remediation boundary:** `likened-b2c/public/js/landing-page.js` must be an editable source module, while `likened-b2c/dist/js/landing-page.js` is its generated browser bundle. The initial B2C migration violated this boundary by committing a generated bundle as the source entry point.
 
 **Files affected:**
 - `../CNAME` - declares the `b2b.likened.net` custom domain for the dedicated B2B Pages site.
 - `../public/index.html` and `../public/pricing.html` - retain absolute application-entry URLs that point to the webapp host.
 - Cloudflare Redirect Rule `Redirect /b-to-b to b2b.likened.net` - edge configuration requiring destination-path validation.
 - `../../likened-webapp/scripts/build.js` - retains only the legacy compatibility behavior required by the webapp host.
+- `../../likened-b2c/public/js/landing-page.js` - canonical B2C landing-page source entry point.
+- `../../likened-b2c/scripts/build.js` - copies static source and bundles the B2C landing entry point into `dist/`.
+- `../../likened-b2c/.github/workflows/deploy-pages.yml` - installs locked dependencies, builds, and uploads only `dist/`.
 
 **Unchanged:**
 - `../../likened-webapp/public/app/` remains in the webapp repository and is served from `https://likened.net/app/`.
@@ -67,12 +73,13 @@ Define and validate edge redirects from `likened.net/b-to-b` legacy URLs to the 
 
 ### Definition of Done
 
-- [ ] Supported legacy root URLs reach the B2B Pages landing page.
-- [ ] The decision to collapse or preserve legacy pricing URLs is documented and validated.
-- [ ] Redirect status, destination paths, and query-string behavior are verified from an external HTTP client.
-- [ ] `b2b.likened.net` remains bound only to the dedicated B2B Pages repository.
-- [ ] B2B product-entry links open `https://likened.net/app/#/dashboard`.
-- [ ] A documented rollback restores the previously working edge behavior.
+- [x] Supported legacy root URLs reach the B2B Pages landing page.
+- [x] Legacy pricing URLs deliberately collapse to the canonical B2B landing URL.
+- [x] Redirect status, fixed destination, path collapse, and query discard are documented and externally validated.
+- [x] `b2b.likened.net` remains bound only to the dedicated B2B Pages repository.
+- [x] B2B product-entry links open `https://likened.net/app/#/dashboard`.
+- [x] A documented rollback can disable or restore the Cloudflare redirect rule.
+- [ ] The B2C landing source is maintained as an unbundled module and a clean checkout generates its browser bundle in `dist/`.
 
 ### Non-Functional Requirements & Success Metrics
 
@@ -107,9 +114,9 @@ Define and validate edge redirects from `likened.net/b-to-b` legacy URLs to the 
 ## 4. Known Constraints
 
 - `likened.net` nameservers are `dorthy.ns.cloudflare.com` and `justin.ns.cloudflare.com`; Cloudflare became active on 2026-09-19 at 07:21 UTC.
-- The current intended rule filters `(http.host eq "likened.net" and starts_with(http.request.uri.path, "/b-to-b"))` and returns HTTP 301.
-- The current intended action is a static redirect to `https://b2b.likened.net/` with path-suffix preservation disabled.
-- External HTTP validation performed after the configuration change still observed the prior redirect/origin behavior; edge propagation or rule activation remains unverified.
+- The active rule filters `(http.host eq "likened.net" and starts_with(http.request.uri.path, "/b-to-b"))` and returns HTTP 301.
+- The active action is a static redirect to `https://b2b.likened.net/` with path-suffix and query-string preservation disabled.
+- External HTTP validation confirms the canonical B2B destination; the remaining open work is confined to the B2C source/build boundary.
 - GitHub Pages permits one custom domain per Pages site; `b2b.likened.net` belongs to the dedicated B2B repository, while `likened.net` remains assigned to the webapp repository.
 - Static GitHub Pages cannot resolve bare package specifiers at runtime; B2B JavaScript must be compiled before browser delivery or use published browser-resolvable module URLs.
 
@@ -145,9 +152,9 @@ Define and validate edge redirects from `likened.net/b-to-b` legacy URLs to the 
 
 ## 7. Assumptions
 
-- [ ] The B2B Pages deployment serves `/` and `/pricing.html` as the intended canonical landing and pricing destinations.
-- [ ] No higher-priority Cloudflare rule rewrites or redirects the same requests.
-- [ ] The B2B repository deployment produces browser-executable JavaScript with no unresolved imports.
+- [x] The B2B Pages deployment serves `/` and `/pricing.html` as the intended canonical landing and pricing destinations.
+- [x] No higher-priority Cloudflare rule changes the observed redirect destination.
+- [x] The B2B repository deployment produces browser-executable JavaScript with no unresolved imports.
 
 ---
 

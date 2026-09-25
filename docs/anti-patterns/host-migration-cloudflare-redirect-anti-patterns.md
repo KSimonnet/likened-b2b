@@ -1,6 +1,6 @@
 # Host Migration Anti-Patterns
 
-Trigger justification: Contract-B2C-001 and constraints CON-B2C-003 and CON-B2C-004 were violated during the B2B Pages migration when GitHub Pages served raw source with unresolved imports and the deployment workflow could not obtain its required build dependencies.
+Trigger justification: Contracts B2C-001 and B2C-002 and constraints CON-B2C-003, CON-B2C-004, and CON-B2C-006 were violated during the landing-host migrations: raw modules reached Pages, package authorization failed, and the B2C migration later committed a generated bundle as source.
 
 ## Anti-Pattern-HOSTCUT-001: Deploying Raw Browser Module Source to GitHub Pages (🔴 CRITICAL)
 
@@ -48,6 +48,60 @@ rg '^import ' dist/js
 2. Run the build before the Pages upload step.
 3. Upload `dist/` only.
 4. Verify the browser console and deployed script response after deployment.
+
+**Reference:**
+- Contract: [host-migration-cloudflare-redirect-contracts.md](../contracts/host-migration-cloudflare-redirect-contracts.md)
+
+## Anti-Pattern-HOSTCUT-004: Committing a Generated Bundle as the Source Entry Point (🔴 CRITICAL)
+
+**Severity:** CRITICAL
+
+**Category:** Source/Artifact Ownership
+
+**Violates:**
+- Contract-B2C-002 — Separate B2C Source from Browser Artifacts
+- Requirement REQ-B2C-011 — Preserve an editable source entry point
+- Requirement REQ-B2C-012 — Generate the browser bundle under `dist/`
+- Constraint CON-B2C-006 — Keep source and generated artifacts separate
+
+**Root Cause:** The migration copied `dist/js/landing-page.js` into `public/js/landing-page.js` to make the standalone host executable without migrating its source dependencies and build step.
+
+**Definition:** Storing bundler runtime, inlined dependencies, and application code in the canonical `public/js/` entrypoint instead of generating that code into `dist/js/`.
+
+**Why it's harmful:** Developers must edit generated internals, source imports disappear, dependency ownership becomes opaque, and a later build cannot prove that the deployed script came from maintainable source.
+
+**Code examples:**
+
+```javascript
+// BAD - generated IIFE committed as public source.
+(() => {
+  var __defProp = Object.defineProperty;
+  // thousands of lines of inlined dependencies
+})();
+```
+
+```javascript
+// GOOD - source entry point under public/js.
+import { AnimationManager } from "@ksimonnet/utils/web/classes/modules/animation-manager.js";
+```
+
+```javascript
+// GOOD - build emits the browser artifact under dist/js.
+await esbuild.build({
+  entryPoints: ["public/js/landing-page.js"],
+  bundle: true,
+  format: "iife",
+  outfile: "dist/js/landing-page.js"
+});
+```
+
+**Detection strategy:** The source must contain expected imports and must not begin with generated bundler runtime; the built artifact must contain no unresolved static imports.
+
+**Correction strategy:**
+1. Restore the unbundled entrypoint and every repository-owned local dependency.
+2. Declare package and bundler dependencies in `package.json` and the lockfile.
+3. Bundle into `dist/js/landing-page.js` during `npm run build`.
+4. Run the build from a clean checkout after `npm ci`.
 
 **Reference:**
 - Contract: [host-migration-cloudflare-redirect-contracts.md](../contracts/host-migration-cloudflare-redirect-contracts.md)
