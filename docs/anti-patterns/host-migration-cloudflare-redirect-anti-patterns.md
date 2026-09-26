@@ -106,6 +106,35 @@ await esbuild.build({
 **Reference:**
 - Contract: [host-migration-cloudflare-redirect-contracts.md](../contracts/host-migration-cloudflare-redirect-contracts.md)
 
+## Anti-Pattern-HOSTCUT-005: Duplicating a Package-Owned Stat-Counter Action (🔴 CRITICAL)
+
+**Severity:** CRITICAL
+
+**Category:** Shared Package Ownership
+
+**Violates:**
+- Contract-HOSTCUT-001 — Use the Package-Owned Stat-Counter Action
+- Requirements REQ-B2B-003 and REQ-B2C-014 — Use the supported shared action
+- Constraints CON-B2B-002 and CON-B2C-007 — Do not define consumer-local copies
+
+**Root Cause:** The webapp and landing repositories each carried a separate `animateStatCounter` helper, so behavior and fixes could drift between consumers.
+
+**Definition:** Defining or importing a consumer-local `animateStatCounter` implementation after the behavior is provided by `AnimationManager.actions.animateStatCounter` in `@ksimonnet/utils`.
+
+**Why it's harmful:** A fix to the counter algorithm must otherwise be repeated across repositories, while consumers can silently diverge in suffix formatting, duration, or edge-case handling.
+
+**Detection strategy:** Search consumer source for local function definitions and helper files; verify B2B and B2C dependency manifests and lockfiles resolve `@ksimonnet/utils` 2.1.0 or later.
+
+**Correction strategy:**
+1. Implement the behavior once in `AnimationManager.actions`.
+2. Bump the utility package using the package release process.
+3. Update and lock each consumer dependency to the published version.
+4. Replace local calls with `AnimationManager.actions.animateStatCounter` and remove duplicate modules.
+5. Run package tests and clean consumer builds.
+
+**Reference:**
+- Contract: [host-migration-cloudflare-redirect-contracts.md](../contracts/host-migration-cloudflare-redirect-contracts.md)
+
 ## Anti-Pattern-HOSTCUT-002: Constructing a Pages Artifact from a Sibling Private Repository (🔴 CRITICAL)
 
 **Severity:** CRITICAL

@@ -3,7 +3,7 @@ plan_id: PLAN-HOSTCUT-001
 goal: Deploy canonical B2B and B2C landing hosts while preserving the webapp and legacy-route compatibility
 purpose: infrastructure
 component: host-routing
-version: 1.4
+version: 1.7
 date_created: 2026-09-19
 last_updated: 2026-09-26
 owner: Webapp Platform
@@ -18,7 +18,7 @@ tags: [migration, dns, routing, github-pages, landing-page]
 
 ![Status: Completed](https://img.shields.io/badge/status-Completed-green)
 
-This implementation plan deploys the B2B and B2C marketing sites from dedicated repositories while `KSimonnet/likened-webapp` continues to own the web application at `https://likened.net/app/`. Both landing repositories now preserve maintainable source and generate their browser artifacts during the build.
+This implementation plan deploys the B2B and B2C marketing sites from dedicated repositories while `KSimonnet/likened-webapp` continues to own the web application at `https://likened.net/app/`. Host routing, source/artifact remediation, and shared stat-counter package adoption are complete.
 
 ## Human-Readable Overview
 
@@ -76,6 +76,8 @@ This plan changes B2B build ownership, GitHub Pages deployment, static routing, 
 | TRACE-008 | specification | REQ-B2C-011–013, CON-B2C-006 | docs/Specifications/host-migration-cloudflare-redirect-specifications.md | Defines the B2C source entry point, generated bundle, and clean CI build boundary. |
 | TRACE-009 | contract | Contract-B2C-002 | docs/contracts/host-migration-cloudflare-redirect-contracts.md | Enforces source/artifact separation. |
 | TRACE-010 | anti-pattern | Anti-Pattern-HOSTCUT-004 | docs/anti-patterns/host-migration-cloudflare-redirect-anti-patterns.md | Records the generated-bundle-as-source migration failure. |
+| TRACE-011 | contract | Contract-HOSTCUT-001 | docs/contracts/host-migration-cloudflare-redirect-contracts.md | Requires landing consumers to use the package-owned counter action. |
+| TRACE-012 | anti-pattern | Anti-Pattern-HOSTCUT-005 | docs/anti-patterns/host-migration-cloudflare-redirect-anti-patterns.md | Records duplicate stat-counter implementations across repositories. |
 
 ## 2. Execution Gates
 
@@ -85,7 +87,8 @@ This plan does not redefine requirements or constraints. Execution is governed b
 - `REQ-B2B-001–002` and `CON-B2B-001` for the canonical B2B Pages host and application-entry boundary.
 - `REQ-B2C-001–013` and `CON-B2C-001–006` for the independently reproducible B2C Pages host.
 - `Contract-ROUT-001`, `Contract-B2C-001`, and `Contract-B2C-002` for hard runtime and build invariants.
-- `Anti-Pattern-HOSTCUT-001–004` for confirmed migration failure modes.
+- `Anti-Pattern-HOSTCUT-001–005` for confirmed migration failure modes.
+- `Contract-HOSTCUT-001` and `Anti-Pattern-HOSTCUT-005` for shared stat-counter ownership and package-version alignment.
 
 ## 3. Implementation Steps (TDD Workflow)
 
@@ -157,8 +160,8 @@ Machine task table:
 ### Implementation Phase 4 — B2C Replication and Source Remediation
 
 - **PHASE-HOSTCUT-004 Goal:** Publish `likened-webapp/public/index.html` and its B2C companion pages as an independent GitHub Pages site at `b2c.likened.net` without changing the product application at `likened.net/app/`.
-- **Current baseline (2026-09-26):** The public hosts return successfully. `likened-b2c/public/js/landing-page.js` is restored as unbundled source with repository-local helpers; `scripts/build.js` emits `dist/js/landing-page.js` through esbuild; and the Pages workflow authorizes packages, runs `npm ci`, builds, and uploads only `dist/`.
-- **Precondition:** Create or designate a dedicated `KSimonnet/likened-b2c` repository and keep `likened-webapp` as the source of truth until the B2C artifact is independently reproducible.
+- **Current baseline (2026-09-26):** The public hosts return successfully. B2C source/artifact separation is complete. `@ksimonnet/utils@2.1.0` adds the package-owned counter action; webapp and augemented-sourcer declare `^2.1.0`, while B2B and B2C still declare `^2.0.0`. Their source calls the new action, so dependency manifests and locks must be updated before a clean install or deployment.
+- **Precondition:** The `2.1.0` package release is available; consumer registry access is configured through project `.npmrc` files or the documented CI authentication setup.
 
 1. Copy the B2C landing source, pricing page, referenced `assets/`, vendor scripts, and the final B2C CSS bundle into `likened-b2c/public/`. Keep its `CNAME` file at repository root with only `b2c.likened.net`.
 2. Make every B2C landing link host-correct. Links to the product remain `https://likened.net/app/...`; links to the B2B journey use `https://b2b.likened.net/`; do not retain relative links that resolve against the new B2C host incorrectly.
@@ -167,12 +170,16 @@ Machine task table:
 5. Keep CI self-contained. Declare and lock every package instead of checking out a sibling repository.
 6. Configure private package authorization before `npm ci`, then install locked dependencies before every build.
 7. Keep the GitHub Pages workflow on GitHub Actions and upload only `dist/`.
-8. Validate before cutover and after every deployment:
+8. Update the B2B and B2C `@ksimonnet/utils` dependency ranges and lockfiles to `^2.1.0`; do not hand-edit lockfile resolution metadata.
+9. Run the utility action tests, then clean `npm ci` and `npm run build` in both landing consumers. Build the webapp and augemented-sourcer consumers as regression checks.
+10. Validate before cutover and after every deployment:
 	```bash
 	npm ci
 	npm run build
 	rg "^import " public/js/landing-page.js
 	! rg "^import " dist/js/landing-page.js
+	rg "^import " public/js/b-to-b.js
+	! rg "^import " dist/js/b-to-b.js
 	curl -sS -o /dev/null -w "b2c=%{http_code}\n" https://b2c.likened.net/
 	curl -sS -o /dev/null -w "app=%{http_code}\n" https://likened.net/app/
 	```
@@ -184,6 +191,17 @@ Machine task table:
 | TASK-HOSTCUT-010 | Configure B2C Pages workflow, package access, CNAME, and DNS | [x] | GitHub Actions workflow run `35665223787` deployed successfully; `b2c.likened.net` and its pricing page return HTTP 200 |
 | TASK-HOSTCUT-011 | Validate cross-host B2C, B2B, and app links | [x] | Production smoke checks confirm B2C, B2B, and app hosts return HTTP 200; legacy B2B resolves to the canonical B2B host |
 | TASK-HOSTCUT-012 | Install locked B2C dependencies before the Pages build | [x] | Workflow runs package authorization, `npm ci`, and `npm run build` before artifact upload |
+| TASK-HOSTCUT-013 | Update B2B `@ksimonnet/utils` dependency and lockfile to `^2.1.0` | [x] | `npm ci && npm run build` succeeds and `npm ls @ksimonnet/utils` reports 2.1.0 |
+| TASK-HOSTCUT-014 | Update B2C `@ksimonnet/utils` dependency and lockfile to `^2.1.0` | [x] | `npm ci && npm run build` succeeds and `npm ls @ksimonnet/utils` reports 2.1.0 |
+| TASK-HOSTCUT-015 | Verify all landing consumers use the package-owned action without local copies | [x] | Package tests and all four consumer builds pass; source scan finds no local helper definitions |
+
+### Implementation Phase 5 — Shared Package Consumer Cutover
+
+- **Goal:** Complete adoption of the package-owned stat-counter action in B2B and B2C.
+- **Precondition:** `@ksimonnet/utils@2.1.0` is published; package access works from each consumer's project-level npm configuration.
+- **Current state:** All four consumer manifests and lockfiles resolve `@ksimonnet/utils@2.1.0`.
+- **Completion criteria:** B2B and B2C manifests and lockfiles resolve `2.1.0` or later; clean installs and builds pass; package tests and all four consumer builds pass. **Complete.**
+- **Execution:** Updated the B2B and B2C manifests and lockfiles through npm. Verified `npm ci`, `npm run build`, and `npm ls @ksimonnet/utils` in both consumers; webapp and augemented-sourcer builds also pass.
 
 ### Deployment Lessons
 
@@ -241,6 +259,9 @@ Machine task table:
 | TEST-HOSTCUT-003 | static-content | REQ-B2B-001 | `rg "@ksimonnet/|^import " ../likened-b2b/dist/js/b-to-b.js` | No unresolved package or source import remains in browser-delivered B2B JavaScript |
 | TEST-HOSTCUT-004 | deployment-smoke | REQ-B2B-001–002 | Manual URL checks in production | `b2b.likened.net` renders the B2B page and application-entry links open `likened.net/app/#/dashboard` |
 | TEST-HOSTCUT-005 | build integration | REQ-B2C-011–013, CON-B2C-003, CON-B2C-006 | `cd ../likened-b2c && npm ci && npm run build && rg '^import ' public/js/landing-page.js && ! rg '^import ' dist/js/landing-page.js` | A clean checkout builds the browser artifact from maintainable source without sibling repositories |
+| TEST-HOSTCUT-006 | dependency integration | REQ-B2B-003, REQ-B2C-014, Contract-HOSTCUT-001 | In each B2B/B2C repo run `npm ci && npm run build && npm ls @ksimonnet/utils` | Both clean builds resolve 2.1.0 or later and browser output includes the shared action |
+| TEST-HOSTCUT-007 | duplicate ownership | CON-B2B-002, CON-B2C-007, Contract-HOSTCUT-001 | `rg "function animateStatCounter|export function animateStatCounter"` in landing consumer sources | No consumer-local implementation remains |
+| TEST-HOSTCUT-008 | package regression | Contract-HOSTCUT-001 | `cd ../private && npm test -- --grep animateStatCounter` and build all four consumers | Shared action tests and all consumer builds pass |
 
 ## 8. Risks & Assumptions
 
@@ -263,6 +284,10 @@ Machine task table:
 - [x] `b2c.likened.net` is deployed through an independent self-contained Pages artifact.
 - [x] `likened-b2c/public/js/landing-page.js` is restored as an unbundled source entry point.
 - [x] A clean B2C checkout installs locked dependencies and generates `dist/js/landing-page.js` with no unresolved imports.
+- [x] B2B and B2C manifests and lockfiles resolve `@ksimonnet/utils` 2.1.0 or later.
+- [x] Package action tests and clean builds pass for B2B, B2C, webapp, and augemented-sourcer.
+- [ ] B2B and B2C manifests and lockfiles resolve `@ksimonnet/utils` 2.1.0 or later.
+- [ ] Package tests and clean builds pass for B2B, B2C, webapp, and augemented-sourcer using the published action.
 
 ## 10. Change Log
 
@@ -274,6 +299,10 @@ Machine task table:
 | 2026-09-22 | 1.2 | Recorded completed B2B migration and added the B2C replication runbook, Pages deployment checks, package-auth guidance, and failure lessons |
 | 2026-09-26 | 1.3 | Reopened B2C source/build tasks after identifying that a generated landing bundle had been committed as source; added source/artifact contract ownership and clean-build validation |
 | 2026-09-26 | 1.4 | Restored the B2C source entry point and local helpers, added esbuild output and CI dependency installation, and passed the clean-install source/artifact gate |
+| 2026-09-26 | 1.5 | Added shared stat-counter action package cutover; marked B2B/B2C dependency and lockfile updates as outstanding |
+| 2026-09-26 | 1.6 | Added package consumer cutover phase and validation because B2B/B2C still lock utils 2.0.0 |
+| 2026-09-26 | 1.7 | Completed B2B/B2C adoption of utils 2.1.0 and validated clean builds for all consumers |
+| 2026-09-26 | 1.5 | Added shared stat-counter action package cutover; marked B2B/B2C dependency and lockfile updates as outstanding |
 
 ## 11. References
 

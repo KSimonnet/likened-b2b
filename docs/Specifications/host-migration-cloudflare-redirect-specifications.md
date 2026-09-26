@@ -1,6 +1,6 @@
 ---
 goal: "Preserve canonical B2B routing and independently build the B2C landing host"
-version: 1.1
+version: 1.2
 date_created: 2026-09-22
 last_updated: 2026-09-26
 status: "Active"
@@ -36,6 +36,7 @@ Trigger justification: The migration introduces a new public B2C host and change
 
 - **REQ-B2B-001:** The dedicated B2B repository MUST build and deploy a self-contained Pages artifact to `https://b2b.likened.net/`.
 - **REQ-B2B-002:** Every B2B application-entry link MUST target `https://likened.net/app/#/dashboard`.
+- **REQ-B2B-003:** `likened-b2b` MUST declare and lock `@ksimonnet/utils@^2.1.0` or later and use `AnimationManager.actions.animateStatCounter` for stat-counter animation.
 
 ### Canonical B2C Host
 
@@ -58,6 +59,7 @@ Trigger justification: The migration introduces a new public B2C host and change
 - **REQ-B2C-011:** `likened-b2c/public/js/landing-page.js` MUST remain the editable, unbundled source entry point and MUST NOT contain generated bundler runtime or inlined third-party modules.
 - **REQ-B2C-012:** `npm run build` MUST bundle the B2C landing source into `dist/js/landing-page.js`; the generated bundle MUST contain no unresolved static import declarations.
 - **REQ-B2C-013:** The B2C Pages workflow MUST run `npm ci` before `npm run build` so a clean runner uses the committed lockfile and declared dependencies.
+- **REQ-B2C-014:** `likened-b2c` MUST declare and lock `@ksimonnet/utils@^2.1.0` or later and use `AnimationManager.actions.animateStatCounter` for stat-counter animation.
 
 ---
 
@@ -67,11 +69,13 @@ Trigger justification: The migration introduces a new public B2C host and change
 
 - **CON-ROUT-001:** The Legacy B2B redirect destination MUST be the fixed canonical URL `https://b2b.likened.net/`; request-controlled hosts, paths, and queries MUST NOT influence it.
 - **CON-B2B-001:** The B2B Pages site MUST NOT host, proxy, or replace the Webapp Application Route.
+- **CON-B2B-002:** The B2B landing source MUST NOT define a local stat-counter animation when that behavior is provided by `@ksimonnet/utils`.
 - **CON-B2C-001:** The B2C Pages site MUST NOT host, proxy, or replace `https://likened.net/app/`.
 - **CON-B2C-002:** The existing B2B canonical host and the Cloudflare legacy B2B redirect contract MUST remain unchanged.
 - **CON-B2C-003:** The B2C Pages artifact MUST be buildable from sources and dependencies available to its own deployment workflow.
 - **CON-B2C-004:** Private package access, when required, MUST be authorized before package installation; a failed package install MUST fail deployment before artifact upload.
 - **CON-B2C-006:** Source and generated artifacts MUST remain separate: editable JavaScript belongs under `public/js/`, generated browser bundles belong under `dist/js/`, and `dist/` MUST remain ignored.
+- **CON-B2C-007:** The B2C landing source MUST NOT define or ship a local stat-counter animation when that behavior is provided by `@ksimonnet/utils`.
 
 ### Soft Constraints
 
@@ -101,6 +105,7 @@ Trigger justification: The migration introduces a new public B2C host and change
 | B2C landing and pricing HTML | Use canonical B2C and absolute cross-host links | Preserves navigation ownership |
 | B2C build configuration | Emit self-contained CSS, JavaScript, and assets | Prevents Pages runtime 404 and import failures |
 | B2C landing source entry point | Preserve editable module imports and landing behavior | Prevents generated code from becoming the maintenance surface |
+| Shared stat-counter package dependency | Resolve the package API version containing the shared action | Prevents missing-action runtime failures and duplicated implementations |
 
 ---
 
@@ -142,6 +147,7 @@ Trigger justification: The migration introduces a new public B2C host and change
 - **AC-B2C-004:** `https://b2b.likened.net/` and legacy `https://likened.net/b-to-b/` behavior remain unchanged.
 - **AC-B2C-005:** `public/js/landing-page.js` contains source imports, while a clean build creates `dist/js/landing-page.js` with no unresolved static imports.
 - **AC-B2C-006:** A clean checkout can run `npm ci && npm run build` without files from a sibling repository.
+- **AC-B2C-007:** B2B and B2C lockfiles resolve `@ksimonnet/utils` 2.1.0 or later, and both clean builds invoke the package-owned stat-counter action successfully.
 
 ---
 

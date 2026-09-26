@@ -137,3 +137,38 @@ expectB2CApplicationEntryLinks().toEqual([
 **Consequences of Violation:**
 - Immediate: generated code becomes the editing surface or a clean runner cannot produce the deployed script.
 - Long-term: source changes drift from deployment behavior and package upgrades require editing bundled internals.
+
+## Contract-HOSTCUT-001: Use the Package-Owned Stat-Counter Action (🔴 HARD)
+
+**Severity:** HARD CONSTRAINT
+
+**Why Severity:** The same stat-counter algorithm is consumed by multiple independently built landing repositories. A local implementation or an older locked package version creates divergent behavior or a runtime missing-action failure that may only appear after deployment.
+
+**Source:**
+- Requirements: REQ-B2B-003, REQ-B2C-014
+- Constraints: CON-B2B-002, CON-B2C-007
+- UL: Shared Stat-Counter Action
+
+**Rule:** B2B and B2C landing entry points MUST invoke `AnimationManager.actions.animateStatCounter`; they MUST NOT define or import a consumer-local stat-counter helper. Their manifests and lockfiles MUST resolve `@ksimonnet/utils` 2.1.0 or later, the first package version containing this action.
+
+**Preconditions (@pre):**
+- `@ksimonnet/utils` 2.1.0 or later is available to the consumer's package registry configuration.
+- The consumer dependency manifest and lockfile are updated together.
+
+**Postconditions (@post):**
+- The consumer build resolves `AnimationManager.actions.animateStatCounter` from the installed package.
+- No local `animateStatCounter` function or `animate-stat-counter.js` helper remains in the consumer source tree.
+- A clean install and build succeeds for each consumer.
+
+**Invariants:**
+- @invariant The stat-counter algorithm has one implementation, owned by `@ksimonnet/utils`.
+- @invariant Landing pages retain their own intersection observation and pass the intersecting element to the shared action.
+
+**Tests:**
+- Package unit tests verify target, suffix, duration, and invalid target handling.
+- Consumer build tests run after dependency installation and verify the output contains the shared action.
+- Consumer source checks verify no local helper definition remains.
+
+**Consequences of Violation:**
+- Immediate: consumers can call an action absent from their locked package or render counters with divergent behavior.
+- Long-term: algorithm fixes must be duplicated and released independently across repositories.

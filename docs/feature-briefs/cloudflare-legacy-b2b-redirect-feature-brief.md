@@ -1,6 +1,6 @@
 ---
 goal: "Preserve legacy Likened B2B URLs through Cloudflare while routing visitors to the dedicated B2B GitHub Pages site"
-version: 1.2
+version: 1.5
 date_created: 2026-09-21
 last_updated: 2026-09-26
 status: "Completed"
@@ -43,6 +43,8 @@ Define and validate edge redirects from `likened.net/b-to-b` legacy URLs to the 
 
 **Current remediation boundary:** `likened-b2c/public/js/landing-page.js` must be an editable source module, while `likened-b2c/dist/js/landing-page.js` is its generated browser bundle. The initial B2C migration violated this boundary by committing a generated bundle as the source entry point.
 
+**Package cutover complete:** `@ksimonnet/utils@2.1.0` owns `AnimationManager.actions.animateStatCounter`. All four consumers (webapp, B2B, B2C, and augemented-sourcer) declare `^2.1.0` and build against the shared action.
+
 **Files affected:**
 - `../CNAME` - declares the `b2b.likened.net` custom domain for the dedicated B2B Pages site.
 - `../public/index.html` and `../public/pricing.html` - retain absolute application-entry URLs that point to the webapp host.
@@ -51,6 +53,8 @@ Define and validate edge redirects from `likened.net/b-to-b` legacy URLs to the 
 - `../../likened-b2c/public/js/landing-page.js` - canonical B2C landing-page source entry point.
 - `../../likened-b2c/scripts/build.js` - copies static source and bundles the B2C landing entry point into `dist/`.
 - `../../likened-b2c/.github/workflows/deploy-pages.yml` - installs locked dependencies, builds, and uploads only `dist/`.
+- `../../private/utils/web/classes/modules/animation-manager.js` - owns the shared `animateStatCounter` action in `@ksimonnet/utils` 2.1.0.
+- `../../likened-b2b/package.json`, `../../likened-b2b/package-lock.json`, `../../likened-b2c/package.json`, and `../../likened-b2c/package-lock.json` - must resolve the package version that provides the action.
 
 **Unchanged:**
 - `../../likened-webapp/public/app/` remains in the webapp repository and is served from `https://likened.net/app/`.
@@ -80,6 +84,9 @@ Define and validate edge redirects from `likened.net/b-to-b` legacy URLs to the 
 - [x] B2B product-entry links open `https://likened.net/app/#/dashboard`.
 - [x] A documented rollback can disable or restore the Cloudflare redirect rule.
 - [x] The B2C landing source is maintained as an unbundled module and a clean checkout generates its browser bundle in `dist/`.
+- [ ] B2B and B2C declare and lock `@ksimonnet/utils@^2.1.0`, and clean installs/builds pass against the published package.
+- [x] All landing consumers invoke the package-owned action without local stat-counter implementations.
+- [ ] B2B and B2C declare and lock `@ksimonnet/utils@^2.1.0`, and clean installs/builds pass against the published package.
 
 ### Non-Functional Requirements & Success Metrics
 
