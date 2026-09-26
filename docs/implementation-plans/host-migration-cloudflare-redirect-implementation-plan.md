@@ -38,7 +38,7 @@ This plan changes B2B build ownership, GitHub Pages deployment, static routing, 
 - `../likened-b2b/scripts/build.js` — build B2B HTML, assets, CSS, and JavaScript into an isolated `dist/` artifact.
 - `../likened-b2b/.github/workflows/deploy-pages.yml` — build and deploy the B2B `dist/` artifact with GitHub Actions Pages.
 - `../likened-b2b/public/index.html` — use absolute webapp targets for application entry links.
-- `../likened-b2b/public/js/b-to-b.js` — import only browser-resolvable local modules that the B2B build bundles.
+- `../likened-b2b/public/js/landing-page.js` — import only browser-resolvable local modules that the B2B build bundles.
 - `scripts/build.js` — retain only apex, B2C, and legacy B2B compatibility routing.
 - `public/routing/apex-to-b2b-redirect.html` — static apex redirect document to canonical B2B host.
 - `public/routing/legacy-b-to-b-to-b2b-redirect.html` — compatibility redirect for legacy B2B root path.
@@ -153,7 +153,7 @@ Machine task table:
 
 | Task ID | Description | target_path | target_symbol | operation | dependencies | source_spec_ids | status | blocked_reason | validation_command | expected_result | rollback_step |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| TASK-HOSTCUT-005 | Add B2B esbuild entry configuration and include imported helper modules in the B2B source tree | ../likened-b2b/package.json; ../likened-b2b/scripts/build.js; ../likened-b2b/public/js | build | update | TASK-HOSTCUT-004 | REQ-B2B-001 | completed | null | npm run build && ! rg "^import " dist/js/b-to-b.js | Build exits 0 and `dist/js/b-to-b.js` contains no unresolved browser imports | Restore standalone static-copy build and local helper layout |
+| TASK-HOSTCUT-005 | Add B2B esbuild entry configuration and include imported helper modules in the B2B source tree | ../likened-b2b/package.json; ../likened-b2b/scripts/build.js; ../likened-b2b/public/js | build | update | TASK-HOSTCUT-004 | REQ-B2B-001 | completed | null | npm run build && ! rg "^import " dist/js/landing-page.js | Build exits 0 and `dist/js/landing-page.js` contains no unresolved browser imports | Restore standalone static-copy build and local helper layout |
 | TASK-HOSTCUT-006 | Deploy B2B `dist/` through GitHub Actions Pages with `b2b.likened.net` as its custom domain | ../likened-b2b/.github/workflows/deploy-pages.yml; ../likened-b2b/CNAME | GitHub Pages workflow | create | TASK-HOSTCUT-005 | REQ-B2B-001 | completed | null | GitHub Actions deployment status and `curl -sS -o /dev/null -w "%{http_code}" https://b2b.likened.net/` | Pages deployment succeeds and B2B returns HTTP 200 | Disable workflow and restore previous Pages source |
 | TASK-HOSTCUT-007 | Convert B2B application-entry links to the preserved webapp URL and validate production navigation | ../likened-b2b/public/index.html; ../likened-b2b/public/pricing.html | application-entry anchors | update | TASK-HOSTCUT-006 | REQ-B2B-002, CON-B2B-001 | completed | null | rg "https://likened\.net/app/#/dashboard" public/index.html public/pricing.html | Every application-entry link opens the existing webapp | Restore prior link targets |
 
@@ -178,8 +178,8 @@ Machine task table:
 	npm run build
 	rg "^import " public/js/landing-page.js
 	! rg "^import " dist/js/landing-page.js
-	rg "^import " public/js/b-to-b.js
-	! rg "^import " dist/js/b-to-b.js
+	rg "^import " public/js/landing-page.js
+	! rg "^import " dist/js/landing-page.js
 	curl -sS -o /dev/null -w "b2c=%{http_code}\n" https://b2c.likened.net/
 	curl -sS -o /dev/null -w "app=%{http_code}\n" https://likened.net/app/
 	```
@@ -241,7 +241,7 @@ Machine task table:
 - **FILE-HOSTCUT-002**: `../likened-b2b/scripts/build.js` — emits the deployable B2B `dist/` artifact.
 - **FILE-HOSTCUT-003**: `../likened-b2b/.github/workflows/deploy-pages.yml` — builds and deploys the B2B Pages artifact.
 - **FILE-HOSTCUT-004**: `../likened-b2b/public/index.html` — B2B landing page with absolute application-entry links.
-- **FILE-HOSTCUT-005**: `../likened-b2b/public/js/b-to-b.js` — B2B entry point compiled by the B2B build.
+- **FILE-HOSTCUT-005**: `../likened-b2b/public/js/landing-page.js` — B2B entry point compiled by the B2B build.
 - **FILE-HOSTCUT-006**: `scripts/build.js` — retains apex, B2C, and compatibility-path output behavior.
 
 ## 7. Testing
@@ -256,7 +256,7 @@ Machine task table:
 | --- | --- | --- | --- | --- |
 | TEST-HOSTCUT-001 | build | REQ-B2B-001 | `cd ../likened-b2b && npm run build` | Build exits 0 and creates the B2B `dist/` artifact with a bundled B2B JavaScript entry point |
 | TEST-HOSTCUT-002 | static-content | REQ-B2B-002, CON-B2B-001 | `rg "https://likened\.net/app/#/dashboard" ../likened-b2b/public/index.html ../likened-b2b/public/pricing.html` | B2B application-entry links target the unchanged webapp host |
-| TEST-HOSTCUT-003 | static-content | REQ-B2B-001 | `rg "@ksimonnet/|^import " ../likened-b2b/dist/js/b-to-b.js` | No unresolved package or source import remains in browser-delivered B2B JavaScript |
+| TEST-HOSTCUT-003 | static-content | REQ-B2B-001 | `rg "@ksimonnet/|^import " ../likened-b2b/dist/js/landing-page.js` | No unresolved package or source import remains in browser-delivered B2B JavaScript |
 | TEST-HOSTCUT-004 | deployment-smoke | REQ-B2B-001–002 | Manual URL checks in production | `b2b.likened.net` renders the B2B page and application-entry links open `likened.net/app/#/dashboard` |
 | TEST-HOSTCUT-005 | build integration | REQ-B2C-011–013, CON-B2C-003, CON-B2C-006 | `cd ../likened-b2c && npm ci && npm run build && rg '^import ' public/js/landing-page.js && ! rg '^import ' dist/js/landing-page.js` | A clean checkout builds the browser artifact from maintainable source without sibling repositories |
 | TEST-HOSTCUT-006 | dependency integration | REQ-B2B-003, REQ-B2C-014, Contract-HOSTCUT-001 | In each B2B/B2C repo run `npm ci && npm run build && npm ls @ksimonnet/utils` | Both clean builds resolve 2.1.0 or later and browser output includes the shared action |

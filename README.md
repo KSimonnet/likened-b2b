@@ -11,7 +11,7 @@ This repository is the dedicated B2B landing site for the canonical B2B hostname
 - `public/js/` contains browser JavaScript entry points and local modules.
 - `public/index.html` and `public/pricing.html` are the page entry points.
 
-`npm run build` copies `public/` to the generated, ignored `dist/` directory and bundles `public/js/b-to-b.js` for browser delivery. Do not add parallel `assets/`, `css/`, or `js/` directories at the repository root.
+`npm run build` copies `public/` to the generated, ignored `dist/` directory and bundles `public/js/landing-page.js` for browser delivery. Do not add parallel `assets/`, `css/`, or `js/` directories at the repository root.
 
 ## Local preview
 

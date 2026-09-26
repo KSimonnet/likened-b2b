@@ -88,9 +88,9 @@ The action MUST read the numeric target and optional suffix from `target.dataset
 
 `public/js/landing-page.js` MUST retain its page-specific `IntersectionObserver` and invoke `AnimationManager.actions.animateStatCounter({ target: entry.target })`. It MUST NOT import or define a local stat-counter helper.
 
-### REQ-JS-003 — `b-to-b.js` invokes the shared action
+### REQ-JS-003 — `landing-page.js` invokes the shared action
 
-`public/js/b-to-b.js` MUST register an `IntersectionObserver` targeting all `[data-target]` elements within `b-to-b.html` and invoke `AnimationManager.actions.animateStatCounter({ target: entry.target })`. The observer behaviour MUST be identical to that in `landing-page.js` (threshold 0.3, fires once per element).
+`public/js/landing-page.js` MUST register an `IntersectionObserver` targeting all `[data-target]` elements within `b-to-b.html` and invoke `AnimationManager.actions.animateStatCounter({ target: entry.target })`. The observer behaviour MUST be identical to that in `landing-page.js` (threshold 0.3, fires once per element).
 
 ---
 
@@ -106,9 +106,9 @@ The action MUST read the numeric target and optional suffix from `target.dataset
 
 `prepareCSS` MUST include a `b-to-b-bundle.css` entry assembled from the files listed in REQ-INF-001 (in the same order).
 
-### REQ-BUILD-003 — Build `b-to-b.js`
+### REQ-BUILD-003 — Build `landing-page.js`
 
-`buildJS` MUST include a `b-to-b.js` entry point producing `dist/js/b-to-b.js` in `iife` format, matching the configuration of the existing `landing-page.js` entry.
+`buildJS` MUST include a `landing-page.js` entry point producing `dist/js/landing-page.js` in `iife` format, matching the configuration of the existing `landing-page.js` entry.
 
 ---
 
@@ -120,11 +120,11 @@ The action MUST read the numeric target and optional suffix from `target.dataset
 
 ### REQ-BTB-002 — Script
 
-`b-to-b.html` MUST load `./js/b-to-b.js` at the bottom of `<body>` (same position as `landing-page.js` in `index.html`).
+`b-to-b.html` MUST load `./js/landing-page.js` at the bottom of `<body>` (same position as `landing-page.js` in `index.html`).
 
 ### REQ-BTB-003 — Iceberg toggle heading state
 
-The iceberg heading rendered into `#iceberg-toggle-heading` by `b-to-b.js` MUST switch with `#iceberg-toggle` state:
+The iceberg heading rendered into `#iceberg-toggle-heading` by `landing-page.js` MUST switch with `#iceberg-toggle` state:
 
 - when the slider is on (`#iceberg-toggle:checked`), heading text MUST be **"Headhunt Passive-Search Talent"**
 - when the slider is off (not checked), heading text MUST be **"Reactive Post & Pray approach"**

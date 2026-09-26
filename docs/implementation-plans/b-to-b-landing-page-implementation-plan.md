@@ -6,7 +6,7 @@
 
 ## 0. Implementation Governance (MANDATORY)
 
-- **Scope gate**: Covers `public/b-to-b.html` (new), `public/b-to-b/pricing.html` (new), `public/css/pages/b-to-b.css` (new), `public/js/b-to-b.js` (new), the package-owned `AnimationManager.actions.animateStatCounter`, `public/js/landing-page.js` (consumer cutover only), and `scripts/build.js` (additive — new entries only). Chrome extension, back-end, and `pricing.html` are **explicitly out of scope**.
+- **Scope gate**: Covers `public/b-to-b.html` (new), `public/b-to-b/pricing.html` (new), `public/css/pages/b-to-b.css` (new), `public/js/landing-page.js` (new), the package-owned `AnimationManager.actions.animateStatCounter`, `public/js/landing-page.js` (consumer cutover only), and `scripts/build.js` (additive — new entries only). Chrome extension, back-end, and `pricing.html` are **explicitly out of scope**.
 - **ADRs / Contracts / Anti-Patterns**: Scoped N/A for this feature. The feature is a static marketing page with no complex runtime invariants, no event message passing, and no shared state. All design decisions are captured in the Specifications and Feature Brief.
 
 ---
@@ -23,7 +23,7 @@ New BtoB public-facing entry point converting Talent Acquisition professionals i
 - `public/b-to-b.html`
 - `public/b-to-b-pricing.html`
 - `public/css/pages/b-to-b.css`
-- `public/js/b-to-b.js`
+- `public/js/landing-page.js`
 
 **Files to modify (additive / refactor):**
 - `public/js/landing-page.js` — replace local stat-counter calls with `AnimationManager.actions.animateStatCounter`; zero behaviour change
@@ -77,7 +77,7 @@ Write all failing tests before writing source code. Each test MUST fail (RED) be
 
 - [x] **[Test]** `utils/web/classes/tests/animation-manager.test.js` — action reaches `data-target`, respects `data-suffix` and `duration_ms`, and ignores invalid targets — **Spec:** REQ-JS-001
 - [x] **[Test]** consumer build checks — landing entry points bundle calls to `AnimationManager.actions.animateStatCounter` without local helper modules — **Spec:** REQ-JS-002, REQ-JS-003
-- [ ] **[Test]** `tests/build/b-to-b-build.test.js` — build verification: after `npm run build`, `dist/b-to-b.html`, `dist/b-to-b-pricing.html`, `dist/css/b-to-b-bundle.css`, `dist/js/b-to-b.js` all exist — **Spec:** REQ-BUILD-001, REQ-BUILD-002, REQ-BUILD-003
+- [ ] **[Test]** `tests/build/b-to-b-build.test.js` — build verification: after `npm run build`, `dist/b-to-b.html`, `dist/b-to-b-pricing.html`, `dist/css/b-to-b-bundle.css`, `dist/js/landing-page.js` all exist — **Spec:** REQ-BUILD-001, REQ-BUILD-002, REQ-BUILD-003
 - [ ] **[Test]** `tests/acceptance/b-to-b-page-structure.test.js` — structural acceptance: `b-to-b.html` contains the 9 required sections (headings match spec exactly), CTA/link destinations match spec, `dark-mode.js` is in `<head>` — **Spec:** REQ-BTB-001–085, REQ-INF-002, REQ-INF-003
 - [ ] **[Test]** `tests/acceptance/b-to-b-pricing-page-structure.test.js` — structural acceptance: `b-to-b-pricing.html` contains 3 tier cards, no billing toggle, guarantee callout block plus reciprocal B2C callout block present with "Learn more →" link to `../pricing.html` — **Spec:** REQ-BTP-001–009
 - [ ] Run `npm test` — confirm all new tests are RED
@@ -105,7 +105,7 @@ Write all failing tests before writing source code. Each test MUST fail (RED) be
 
 - [ ] Open `scripts/build.js` — add two entries to `copyPublicFiles`: `b-to-b.html` and `b-to-b-pricing.html` — **Spec:** REQ-BUILD-001
 - [ ] Add `b-to-b-bundle.css` entry to `prepareCSS` (brand-kit → page-style → landing-page.css → slider-switch → modal → b-to-b.css, in that order) — **Spec:** REQ-BUILD-002
-- [ ] Add `b-to-b.js` entry to `buildJS` (`iife` format, same config as `landing-page.js`) — **Spec:** REQ-BUILD-003
+- [ ] Add `landing-page.js` entry to `buildJS` (`iife` format, same config as `landing-page.js`) — **Spec:** REQ-BUILD-003
 - [ ] Run `npm run build` — must complete without errors (placeholder empty files for HTML/CSS/JS are sufficient to pass the build at this stage)
 - [ ] Run `npm test` — `b-to-b-build.test.js` turns GREEN
 
@@ -113,14 +113,14 @@ Write all failing tests before writing source code. Each test MUST fail (RED) be
 
 ---
 
-### Phase IP-3: `public/css/pages/b-to-b.css` + `public/js/b-to-b.js`
+### Phase IP-3: `public/css/pages/b-to-b.css` + `public/js/landing-page.js`
 
 **Prerequisite:** IP-2 GREEN.
 
-#### IP-3a: `b-to-b.js`
+#### IP-3a: `landing-page.js`
 
-- [x] Create `public/js/b-to-b.js` — register `IntersectionObserver` on all `[data-target]` elements and invoke `AnimationManager.actions.animateStatCounter`, threshold 0.3, fires once per element — **Spec:** REQ-JS-003
-- [ ] Run `npm run build` — verify `dist/js/b-to-b.js` is built
+- [x] Create `public/js/landing-page.js` — register `IntersectionObserver` on all `[data-target]` elements and invoke `AnimationManager.actions.animateStatCounter`, threshold 0.3, fires once per element — **Spec:** REQ-JS-003
+- [ ] Run `npm run build` — verify `dist/js/landing-page.js` is built
 
 #### IP-3b: `b-to-b.css`
 
@@ -145,7 +145,7 @@ Build each section in spec order. After each section, open the file in a browser
 
 #### IP-4a: Page shell
 
-- [ ] Create `public/b-to-b.html` — copy the head, nav, and footer shell from `index.html`; replace the CSS bundle link with `css/b-to-b-bundle.css`; replace the JS script with `./js/b-to-b.js`; set `<title>` to "Likened for Talent Acquisition — Network Science-Powered Talent Mapping" — **Spec:** REQ-BTB-001, REQ-BTB-002, REQ-INF-002, REQ-INF-005, REQ-INF-006
+- [ ] Create `public/b-to-b.html` — copy the head, nav, and footer shell from `index.html`; replace the CSS bundle link with `css/b-to-b-bundle.css`; replace the JS script with `./js/landing-page.js`; set `<title>` to "Likened for Talent Acquisition — Network Science-Powered Talent Mapping" — **Spec:** REQ-BTB-001, REQ-BTB-002, REQ-INF-002, REQ-INF-005, REQ-INF-006
 - [ ] Nav: "Sign In" → `../app/#/dashboard`; "Pricing" → `pricing.html`; no standalone "For Individuals" link — **Spec:** REQ-INF-006
 
 #### IP-4b: Section 1 — Hero / Mission
@@ -277,7 +277,7 @@ Build each section in spec order. After each section, open the file in a browser
 ### To Be Created
 
 - 🆕 `AnimationManager.actions.animateStatCounter` — package-owned reusable animation action
-- 🆕 `public/js/b-to-b.js` — invokes the package action; registers IntersectionObserver
+- 🆕 `public/js/landing-page.js` — invokes the package action; registers IntersectionObserver
 - 🆕 `public/css/pages/b-to-b.css` — BtoB-specific layout overrides
 - 🆕 `public/b-to-b.html` — BtoB landing page
 - 🆕 `public/b-to-b-pricing.html` — BtoB pricing page
@@ -332,7 +332,7 @@ Build each section in spec order. After each section, open the file in a browser
 
 ### Build
 - [ ] `npm run build` completes without errors
-- [ ] `dist/b-to-b.html`, `dist/b-to-b-pricing.html`, `dist/css/b-to-b-bundle.css`, `dist/js/b-to-b.js` all exist after build
+- [ ] `dist/b-to-b.html`, `dist/b-to-b-pricing.html`, `dist/css/b-to-b-bundle.css`, `dist/js/landing-page.js` all exist after build
 
 ### Regression
 - [ ] `npm test` — full suite GREEN (existing BtoC tests unaffected)

@@ -18,10 +18,10 @@ Likened has no public-facing entry point for its enterprise / Talent Acquisition
 - `public/b-to-b.html` — new file; BtoB landing page targeting TA Partners, Heads of Talent, and HR Directors
 - `public/b-to-b-pricing.html` — new file; BtoB pricing page (scope extended from original brief — documented here per governance rule)
 - `public/css/pages/b-to-b.css` — new file; BtoB-specific style overrides (hero copy, stats layout, differentiators grid)
-- `public/js/b-to-b.js` — new file; invokes `AnimationManager.actions.animateStatCounter`
+- `public/js/landing-page.js` — new file; invokes `AnimationManager.actions.animateStatCounter`
 - `@ksimonnet/utils/web/classes/modules/animation-manager.js` — owns the reusable stat-counter action
 - `public/js/landing-page.js` — retains page-specific observer orchestration and invokes the package action
-- `scripts/build.js` — updated to copy both BtoB HTML files, bundle `b-to-b-bundle.css`, and build `b-to-b.js`
+- `scripts/build.js` — updated to copy both BtoB HTML files, bundle `b-to-b-bundle.css`, and build `landing-page.js`
 
 **Unchanged:**
 - `public/index.html` content and sections

@@ -20,9 +20,9 @@ async function copyDirectory(src_dir, dest_dir) {
 async function buildJavaScriptBundle() {
   await esbuild.build({
     bundle: true,
-    entryPoints: [path.join(PROJECT_ROOT, "public", "js", "b-to-b.js")],
+    entryPoints: [path.join(PROJECT_ROOT, "public", "js", "landing-page.js")],
     format: "iife",
-    outfile: path.join(DIST_ROOT, "js", "b-to-b.js"),
+    outfile: path.join(DIST_ROOT, "js", "landing-page.js"),
     platform: "browser",
     target: "es2020"
   });
