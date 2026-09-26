@@ -112,7 +112,7 @@ expectB2CApplicationEntryLinks().toEqual([
 - Constraints: CON-B2C-003, CON-B2C-006
 - UL: Source Entry Point, Deployable Browser Bundle, Source/Artifact Boundary
 
-**Rule:** `likened-b2c/public/js/landing-page.js` MUST be maintainable source with explicit imports. The build MUST generate `likened-b2c/dist/js/landing-page.js`, and CI MUST install locked dependencies before building.
+**Rule:** Every `likened-b2c/public/js/` browser entry point (`landing-page.js`, `pricing.js`) MUST be maintainable source. The build MUST generate each `likened-b2c/dist/js/` counterpart, and CI MUST install locked dependencies before building.
 
 **Preconditions (@pre):**
 - The B2C repository is checked out without sibling repositories.
@@ -120,19 +120,19 @@ expectB2CApplicationEntryLinks().toEqual([
 
 **Postconditions (@post):**
 - `npm ci && npm run build` succeeds.
-- The source entry point retains its module imports.
-- The deployable browser bundle contains no unresolved static imports.
-- No build writes generated code back into `public/js/landing-page.js`.
+- No source entry point contains generated bundler runtime or inlined third-party modules.
+- Each deployable browser bundle contains no unresolved static imports.
+- No build writes generated code back into `public/js/`.
 
 **Invariants:**
 - @invariant `public/` is the B2C source tree.
 - @invariant `dist/` is generated and ignored.
 
 **Tests:**
-- Build integration: run `npm ci && npm run build` in `likened-b2c`.
-- Source check: `rg '^import ' public/js/landing-page.js` MUST find the source imports.
-- Artifact check: `rg '^import ' dist/js/landing-page.js` MUST find no unresolved imports.
-- Ownership: this clean-build integration check is the primary enforcement owner; no additional regex gate is required while the repository has one landing entry point.
+- Build integration: run `npm ci && npm run build` in `likened-b2c`; `scripts/build.js` fails the build when a contract check fails.
+- Source check: no `public/js/` entry point starts with generated IIFE runtime or inlines `node_modules` code.
+- Artifact check: `rg '^import ' dist/js/landing-page.js dist/js/pricing.js` MUST find no unresolved imports.
+- Ownership: the build-script boundary check is the primary enforcement owner; no additional regex gate is required.
 
 **Consequences of Violation:**
 - Immediate: generated code becomes the editing surface or a clean runner cannot produce the deployed script.

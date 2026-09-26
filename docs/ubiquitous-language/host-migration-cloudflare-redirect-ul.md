@@ -56,7 +56,7 @@ flowchart LR
 - Use **Webapp Application Route** for `https://likened.net/app/#/dashboard`; do not classify it as B2B Pages content.
 - Use **Canonical B2C Landing URL** for `https://b2c.likened.net/`; do not describe it as an apex redirect destination unless an explicit routing rule changes that behavior.
 - Use **B2C Pages Site** for the independently deployed B2C marketing artifact.
-- Use **Source Entry Point** for `likened-b2c/public/js/landing-page.js` and **Deployable Browser Bundle** for `likened-b2c/dist/js/landing-page.js`.
+- Use **Source Entry Point** for each `likened-b2c/public/js/` browser entry (`landing-page.js`, `pricing.js`) and **Deployable Browser Bundle** for its `likened-b2c/dist/js/` counterpart.
 - Use **Source/Artifact Boundary** when distinguishing maintainable source from generated deployment output.
 - Use **Shared Stat-Counter Action** for the package-owned animation; landing entry points own only page-specific observation and invocation.
 

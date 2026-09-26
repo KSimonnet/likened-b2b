@@ -56,8 +56,8 @@ Trigger justification: The migration introduces a new public B2C host and change
 - **REQ-B2C-008:** The B2C Pages deployment MUST publish a built, self-contained artifact rather than unbundled source that contains unresolved browser imports.
 - **REQ-B2C-009:** Every browser-delivered B2C JavaScript asset with module dependencies MUST be bundled or otherwise resolve all imports in the deployed artifact.
 - **REQ-B2C-010:** The B2C Pages workflow MUST support a manual deployment trigger.
-- **REQ-B2C-011:** `likened-b2c/public/js/landing-page.js` MUST remain the editable, unbundled source entry point and MUST NOT contain generated bundler runtime or inlined third-party modules.
-- **REQ-B2C-012:** `npm run build` MUST bundle the B2C landing source into `dist/js/landing-page.js`; the generated bundle MUST contain no unresolved static import declarations.
+- **REQ-B2C-011:** Every B2C browser entry point under `likened-b2c/public/js/` (`landing-page.js` and `pricing.js`) MUST remain editable, unbundled source and MUST NOT contain generated bundler runtime or inlined third-party modules.
+- **REQ-B2C-012:** `npm run build` MUST bundle every B2C browser entry point into its `dist/js/` counterpart; each generated bundle MUST contain no unresolved static import declarations.
 - **REQ-B2C-013:** The B2C Pages workflow MUST run `npm ci` before `npm run build` so a clean runner uses the committed lockfile and declared dependencies.
 - **REQ-B2C-014:** `likened-b2c` MUST declare and lock `@ksimonnet/utils@^2.1.0` or later and use `AnimationManager.actions.animateStatCounter` for stat-counter animation.
 
@@ -145,7 +145,7 @@ Trigger justification: The migration introduces a new public B2C host and change
 - **AC-B2C-002:** The deployed B2C landing artifact has no unresolved browser imports.
 - **AC-B2C-003:** Product-entry links from B2C resolve to `https://likened.net/app/#/dashboard`.
 - **AC-B2C-004:** `https://b2b.likened.net/` and legacy `https://likened.net/b-to-b/` behavior remain unchanged.
-- **AC-B2C-005:** `public/js/landing-page.js` contains source imports, while a clean build creates `dist/js/landing-page.js` with no unresolved static imports.
+- **AC-B2C-005:** No `public/js/` entry point contains generated bundler runtime, while a clean build creates each `dist/js/` counterpart with no unresolved static imports.
 - **AC-B2C-006:** A clean checkout can run `npm ci && npm run build` without files from a sibling repository.
 - **AC-B2C-007:** B2B and B2C lockfiles resolve `@ksimonnet/utils` 2.1.0 or later, and both clean builds invoke the package-owned stat-counter action successfully.
 

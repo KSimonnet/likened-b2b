@@ -160,13 +160,13 @@ Machine task table:
 ### Implementation Phase 4 — B2C Replication and Source Remediation
 
 - **PHASE-HOSTCUT-004 Goal:** Publish `likened-webapp/public/index.html` and its B2C companion pages as an independent GitHub Pages site at `b2c.likened.net` without changing the product application at `likened.net/app/`.
-- **Current baseline (2026-09-26):** The public hosts return successfully. B2C source/artifact separation is complete. `@ksimonnet/utils@2.1.0` adds the package-owned counter action; webapp and augemented-sourcer declare `^2.1.0`, while B2B and B2C still declare `^2.0.0`. Their source calls the new action, so dependency manifests and locks must be updated before a clean install or deployment.
+- **Current baseline (2026-09-26):** The public hosts return successfully. B2C source/artifact separation now covers both browser entry points after `public/js/pricing.js` was restored from a committed bundle to maintainable source. `@ksimonnet/utils@2.1.0` adds the package-owned counter action; webapp and augemented-sourcer declare `^2.1.0`, while B2B and B2C still declare `^2.0.0`. Their source calls the new action, so dependency manifests and locks must be updated before a clean install or deployment.
 - **Precondition:** The `2.1.0` package release is available; consumer registry access is configured through project `.npmrc` files or the documented CI authentication setup.
 
 1. Copy the B2C landing source, pricing page, referenced `assets/`, vendor scripts, and the final B2C CSS bundle into `likened-b2c/public/`. Keep its `CNAME` file at repository root with only `b2c.likened.net`.
 2. Make every B2C landing link host-correct. Links to the product remain `https://likened.net/app/...`; links to the B2B journey use `https://b2b.likened.net/`; do not retain relative links that resolve against the new B2C host incorrectly.
-3. Keep `public/js/landing-page.js` as the unbundled source entry point. Never copy a generated IIFE from another repository into `public/js/`.
-4. Build `dist/` from committed B2C sources. Bundle `public/js/landing-page.js` into `dist/js/landing-page.js`; upload `dist/`, never raw source.
+3. Keep every `public/js/` browser entry point unbundled source. Never copy a generated IIFE from another repository or from `dist/` into `public/js/`.
+4. Build `dist/` from committed B2C sources. Bundle `public/js/landing-page.js` and `public/js/pricing.js` into their `dist/js/` counterparts; upload `dist/`, never raw source.
 5. Keep CI self-contained. Declare and lock every package instead of checking out a sibling repository.
 6. Configure private package authorization before `npm ci`, then install locked dependencies before every build.
 7. Keep the GitHub Pages workflow on GitHub Actions and upload only `dist/`.
@@ -176,18 +176,17 @@ Machine task table:
 	```bash
 	npm ci
 	npm run build
-	rg "^import " public/js/landing-page.js
+	! rg "node_modules/" public/js/landing-page.js public/js/pricing.js
 	! rg "^import " dist/js/landing-page.js
-	rg "^import " public/js/landing-page.js
-	! rg "^import " dist/js/landing-page.js
+	! rg "^import " dist/js/pricing.js
 	curl -sS -o /dev/null -w "b2c=%{http_code}\n" https://b2c.likened.net/
 	curl -sS -o /dev/null -w "app=%{http_code}\n" https://likened.net/app/
 	```
 
 | Task | Description | Status | Validation |
 | --- | --- | --- | --- |
-| TASK-HOSTCUT-008 | Restore an isolated, maintainable B2C source tree | [x] | `public/js/landing-page.js` contains source imports and no generated bundler runtime |
-| TASK-HOSTCUT-009 | Bundle B2C landing JavaScript into the deployment artifact | [x] | `npm ci && npm run build` creates `dist/js/landing-page.js` with no unresolved imports |
+| TASK-HOSTCUT-008 | Restore an isolated, maintainable B2C source tree | [x] | No `public/js/` entry point contains generated bundler runtime |
+| TASK-HOSTCUT-009 | Bundle B2C browser JavaScript into the deployment artifact | [x] | `npm ci && npm run build` creates `dist/js/landing-page.js` and `dist/js/pricing.js` with no unresolved imports |
 | TASK-HOSTCUT-010 | Configure B2C Pages workflow, package access, CNAME, and DNS | [x] | GitHub Actions workflow run `35665223787` deployed successfully; `b2c.likened.net` and its pricing page return HTTP 200 |
 | TASK-HOSTCUT-011 | Validate cross-host B2C, B2B, and app links | [x] | Production smoke checks confirm B2C, B2B, and app hosts return HTTP 200; legacy B2B resolves to the canonical B2B host |
 | TASK-HOSTCUT-012 | Install locked B2C dependencies before the Pages build | [x] | Workflow runs package authorization, `npm ci`, and `npm run build` before artifact upload |
@@ -258,7 +257,7 @@ Machine task table:
 | TEST-HOSTCUT-002 | static-content | REQ-B2B-002, CON-B2B-001 | `rg "https://likened\.net/app/#/dashboard" ../likened-b2b/public/index.html ../likened-b2b/public/pricing.html` | B2B application-entry links target the unchanged webapp host |
 | TEST-HOSTCUT-003 | static-content | REQ-B2B-001 | `rg "@ksimonnet/|^import " ../likened-b2b/dist/js/landing-page.js` | No unresolved package or source import remains in browser-delivered B2B JavaScript |
 | TEST-HOSTCUT-004 | deployment-smoke | REQ-B2B-001–002 | Manual URL checks in production | `b2b.likened.net` renders the B2B page and application-entry links open `likened.net/app/#/dashboard` |
-| TEST-HOSTCUT-005 | build integration | REQ-B2C-011–013, CON-B2C-003, CON-B2C-006 | `cd ../likened-b2c && npm ci && npm run build && rg '^import ' public/js/landing-page.js && ! rg '^import ' dist/js/landing-page.js` | A clean checkout builds the browser artifact from maintainable source without sibling repositories |
+| TEST-HOSTCUT-005 | build integration | REQ-B2C-011–013, CON-B2C-003, CON-B2C-006 | `cd ../likened-b2c && npm ci && npm run build && ! rg 'node_modules/' public/js/landing-page.js public/js/pricing.js && ! rg '^import ' dist/js/landing-page.js dist/js/pricing.js` | A clean checkout builds every browser artifact from maintainable source without sibling repositories |
 | TEST-HOSTCUT-006 | dependency integration | REQ-B2B-003, REQ-B2C-014, Contract-HOSTCUT-001 | In each B2B/B2C repo run `npm ci && npm run build && npm ls @ksimonnet/utils` | Both clean builds resolve 2.1.0 or later and browser output includes the shared action |
 | TEST-HOSTCUT-007 | duplicate ownership | CON-B2B-002, CON-B2C-007, Contract-HOSTCUT-001 | `rg "function animateStatCounter|export function animateStatCounter"` in landing consumer sources | No consumer-local implementation remains |
 | TEST-HOSTCUT-008 | package regression | Contract-HOSTCUT-001 | `cd ../private && npm test -- --grep animateStatCounter` and build all four consumers | Shared action tests and all consumer builds pass |
@@ -282,8 +281,8 @@ Machine task table:
 - [x] The webapp remains deployed independently at `https://likened.net/app/`.
 - [x] Production B2B page and app-entry navigation pass manual smoke testing.
 - [x] `b2c.likened.net` is deployed through an independent self-contained Pages artifact.
-- [x] `likened-b2c/public/js/landing-page.js` is restored as an unbundled source entry point.
-- [x] A clean B2C checkout installs locked dependencies and generates `dist/js/landing-page.js` with no unresolved imports.
+- [x] `likened-b2c/public/js/landing-page.js` and `likened-b2c/public/js/pricing.js` are restored as unbundled source entry points.
+- [x] A clean B2C checkout installs locked dependencies and generates `dist/js/landing-page.js` and `dist/js/pricing.js` with no unresolved imports.
 - [x] B2B and B2C manifests and lockfiles resolve `@ksimonnet/utils` 2.1.0 or later.
 - [x] Package action tests and clean builds pass for B2B, B2C, webapp, and augemented-sourcer.
 - [ ] B2B and B2C manifests and lockfiles resolve `@ksimonnet/utils` 2.1.0 or later.

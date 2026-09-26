@@ -41,7 +41,7 @@ Define and validate edge redirects from `likened.net/b-to-b` legacy URLs to the 
 
 **Success boundary:** A visitor opening a supported legacy B2B URL reaches the fixed B2B landing URL without a loop or 404. Path suffixes and query parameters are deliberately discarded, while application-entry links continue to reach `likened.net/app/`.
 
-**Current remediation boundary:** `likened-b2c/public/js/landing-page.js` must be an editable source module, while `likened-b2c/dist/js/landing-page.js` is its generated browser bundle. The initial B2C migration violated this boundary by committing a generated bundle as the source entry point.
+**Current remediation boundary:** Each `likened-b2c/public/js/` browser entry point (`landing-page.js`, `pricing.js`) must be an editable source module, while its `likened-b2c/dist/js/` counterpart is the generated browser bundle. The B2C migration violated this boundary twice by committing generated bundles as source entry points.
 
 **Package cutover complete:** `@ksimonnet/utils@2.1.0` owns `AnimationManager.actions.animateStatCounter`. All four consumers (webapp, B2B, B2C, and augemented-sourcer) declare `^2.1.0` and build against the shared action.
 
@@ -50,8 +50,8 @@ Define and validate edge redirects from `likened.net/b-to-b` legacy URLs to the 
 - `../public/index.html` and `../public/pricing.html` - retain absolute application-entry URLs that point to the webapp host.
 - Cloudflare Redirect Rule `Redirect /b-to-b to b2b.likened.net` - edge configuration requiring destination-path validation.
 - `../../likened-webapp/scripts/build.js` - retains only the legacy compatibility behavior required by the webapp host.
-- `../../likened-b2c/public/js/landing-page.js` - canonical B2C landing-page source entry point.
-- `../../likened-b2c/scripts/build.js` - copies static source and bundles the B2C landing entry point into `dist/`.
+- `../../likened-b2c/public/js/landing-page.js` and `../../likened-b2c/public/js/pricing.js` - canonical B2C source entry points.
+- `../../likened-b2c/scripts/build.js` - copies static source and bundles every B2C entry point into `dist/`.
 - `../../likened-b2c/.github/workflows/deploy-pages.yml` - installs locked dependencies, builds, and uploads only `dist/`.
 - `../../private/utils/web/classes/modules/animation-manager.js` - owns the shared `animateStatCounter` action in `@ksimonnet/utils` 2.1.0.
 - `../../likened-b2b/package.json`, `../../likened-b2b/package-lock.json`, `../../likened-b2c/package.json`, and `../../likened-b2c/package-lock.json` - must resolve the package version that provides the action.

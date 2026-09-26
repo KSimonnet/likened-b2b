@@ -64,7 +64,7 @@ rg '^import ' dist/js
 - Requirement REQ-B2C-012 — Generate the browser bundle under `dist/`
 - Constraint CON-B2C-006 — Keep source and generated artifacts separate
 
-**Root Cause:** The migration copied `dist/js/landing-page.js` into `public/js/landing-page.js` to make the standalone host executable without migrating its source dependencies and build step.
+**Root Cause:** The migration copied generated `dist/js/` bundles into `public/js/` (first `landing-page.js`, then `pricing.js`) to make the standalone host executable without migrating its source dependencies and build step.
 
 **Definition:** Storing bundler runtime, inlined dependencies, and application code in the canonical `public/js/` entrypoint instead of generating that code into `dist/js/`.
 
@@ -86,21 +86,21 @@ import { AnimationManager } from "@ksimonnet/utils/web/classes/modules/animation
 ```
 
 ```javascript
-// GOOD - build emits the browser artifact under dist/js.
+// GOOD - build emits every browser artifact under dist/js.
 await esbuild.build({
-  entryPoints: ["public/js/landing-page.js"],
+  entryPoints: ["public/js/landing-page.js", "public/js/pricing.js"],
   bundle: true,
   format: "iife",
-  outfile: "dist/js/landing-page.js"
+  outdir: "dist/js"
 });
 ```
 
-**Detection strategy:** The source must contain expected imports and must not begin with generated bundler runtime; the built artifact must contain no unresolved static imports.
+**Detection strategy:** No source entry point may begin with generated bundler runtime or inline `node_modules` code; each built artifact must contain no unresolved static imports. An entry point without dependencies legitimately has no imports, so import presence is not a source signal.
 
 **Correction strategy:**
-1. Restore the unbundled entrypoint and every repository-owned local dependency.
+1. Restore the unbundled entrypoints and every repository-owned local dependency.
 2. Declare package and bundler dependencies in `package.json` and the lockfile.
-3. Bundle into `dist/js/landing-page.js` during `npm run build`.
+3. Bundle each entry point into its `dist/js/` counterpart during `npm run build`.
 4. Run the build from a clean checkout after `npm ci`.
 
 **Reference:**
