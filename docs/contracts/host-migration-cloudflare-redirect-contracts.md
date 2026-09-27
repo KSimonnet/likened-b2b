@@ -101,18 +101,19 @@ expectB2CApplicationEntryLinks().toEqual([
 - Immediate: visitors receive a 404, B2B content, or a broken application-entry link.
 - Long-term: B2C and product-app ownership become coupled, making the next host migration unsafe.
 
-## Contract-B2C-002: Separate B2C Source from Browser Artifacts (🔴 HARD)
+## Contract-B2C-002: Preserve B2C JavaScript Source Entry Points (🔴 HARD)
 
 **Severity:** HARD CONSTRAINT
 
-**Why Severity:** Treating a generated bundle as the source entry point destroys the reproducible source-to-artifact boundary and makes later feature work modify generated implementation details.
+**Why Severity:** Replacing editable B2C JavaScript with generated output destroys the reproducible source-to-artifact boundary and makes later feature work modify bundled implementation details.
 
 **Source:**
 - Requirements: REQ-B2C-011, REQ-B2C-012, REQ-B2C-013
 - Constraints: CON-B2C-003, CON-B2C-006
+- Contract: Contract-HOSTCUT-002
 - UL: Source Entry Point, Deployable Browser Bundle, Source/Artifact Boundary
 
-**Rule:** Every `likened-b2c/public/js/` browser entry point (`landing-page.js`, `pricing.js`) MUST be maintainable source. The build MUST generate each `likened-b2c/dist/js/` counterpart, and CI MUST install locked dependencies before building.
+**Rule:** This contract specializes Contract-HOSTCUT-002 for B2C JavaScript. `likened-b2c/public/js/landing-page.js` and `likened-b2c/public/js/pricing.js` MUST remain maintainable source entry points. The build MUST generate each counterpart under `likened-b2c/dist/js/`, and CI MUST install locked dependencies before building.
 
 **Preconditions (@pre):**
 - The B2C repository is checked out without sibling repositories.
@@ -137,6 +138,31 @@ expectB2CApplicationEntryLinks().toEqual([
 **Consequences of Violation:**
 - Immediate: generated code becomes the editing surface or a clean runner cannot produce the deployed script.
 - Long-term: source changes drift from deployment behavior and package upgrades require editing bundled internals.
+
+## Contract-HOSTCUT-002: Separate Sources from Deployable Bundle (🔴 HARD)
+
+**Severity:** HARD CONSTRAINT
+
+**Why Severity:** Generated JavaScript and CSS bundles were committed into the B2B and B2C `public/` trees. Builds that copy `public/` without compiling those assets turn generated files into undeclared source dependencies and allow deployed output to drift from maintainable code.
+
+**Source:** REQ-B2B-004, CON-B2B-003, REQ-B2C-011/012, CON-B2C-006, Anti-Pattern-HOSTCUT-004, Anti-Pattern-HOSTCUT-006.
+
+**Rule:** Source entry points MUST remain editable and generated bundles MUST be emitted only under ignored `dist/` paths. For B2B CSS, the entry points are `src/css/b-to-b.css` and `src/css/tailwind.css`, with `tailwind.config.js` controlling utility generation; the outputs are `dist/css/b-to-b-bundle.css` and `dist/css/tailwind.min.css`. For B2C landing CSS, `likened-webapp/public/css/pages/landing-page.css` is the sole CSS entry point and `landing-page-bundle.css` is generated only under `likened-b2c/dist/css/`. B2C JavaScript sources remain under `public/js/` and their bundles are generated under `dist/js/`. No generated bundle may be committed under `public/`.
+
+**Postconditions (@post):**
+- Clean B2B and B2C builds emit their declared CSS and JavaScript bundles under their respective `dist/` directories.
+- No generated CSS or JavaScript bundle exists under either repository's `public/` source tree.
+- Each HTML stylesheet/script URL resolves to its generated counterpart in the deployment artifact.
+
+**Tests:**
+- Build integration: run `npm run build` in `likened-b2b` and `likened-b2c`.
+- B2B boundary: no `public/css/b-to-b-bundle.css` or `public/css/tailwind.min.css`; both outputs exist under `dist/css/`.
+- B2C boundary: `landing-page.css` is the only landing CSS source entry point, no `public/css/landing-page-bundle.css` exists, and the generated bundle exists under `dist/css/`.
+- Build enforcement: each consumer build MUST fail if its generated public bundle is reintroduced.
+
+**Consequences of Violation:**
+- Immediate: committed generated bundles become hidden deployment dependencies and clean builds cannot reproduce delivered assets from source.
+- Long-term: source and deployment behavior drift across repositories, while shared CSS changes require editing or copying generated output.
 
 ## Contract-HOSTCUT-001: Use the Package-Owned Stat-Counter Action (🔴 HARD)
 

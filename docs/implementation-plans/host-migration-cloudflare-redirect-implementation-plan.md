@@ -3,9 +3,9 @@ plan_id: PLAN-HOSTCUT-001
 goal: Deploy canonical B2B and B2C landing hosts while preserving the webapp and legacy-route compatibility
 purpose: infrastructure
 component: host-routing
-version: 1.7
+version: 1.8
 date_created: 2026-09-19
-last_updated: 2026-09-26
+last_updated: 2026-09-28
 owner: Webapp Platform
 status: completed
 status_badge_label: Completed
@@ -18,7 +18,7 @@ tags: [migration, dns, routing, github-pages, landing-page]
 
 ![Status: Completed](https://img.shields.io/badge/status-Completed-green)
 
-This implementation plan deploys the B2B and B2C marketing sites from dedicated repositories while `KSimonnet/likened-webapp` continues to own the web application at `https://likened.net/app/`. Host routing, source/artifact remediation, and shared stat-counter package adoption are complete.
+This implementation plan deploys the B2B and B2C marketing sites from dedicated repositories while `KSimonnet/likened-webapp` continues to own the web application at `https://likened.net/app/`. Host routing, JavaScript/CSS source-artifact separation, and shared stat-counter package adoption are complete.
 
 ## Human-Readable Overview
 
@@ -39,6 +39,9 @@ This plan changes B2B build ownership, GitHub Pages deployment, static routing, 
 - `../likened-b2b/.github/workflows/deploy-pages.yml` — build and deploy the B2B `dist/` artifact with GitHub Actions Pages.
 - `../likened-b2b/public/index.html` — use absolute webapp targets for application entry links.
 - `../likened-b2b/public/js/landing-page.js` — import only browser-resolvable local modules that the B2B build bundles.
+- `../likened-b2b/src/css/tailwind.css` and `../likened-b2b/tailwind.config.js` — editable Tailwind source and utility scanning configuration.
+- `../likened-b2b/src/css/b-to-b.css` and `../likened-b2b/src/css/{shared,pages}/` — editable B2B CSS entry point and source modules.
+- `../likened-b2b/dist/css/tailwind.min.css` and `../likened-b2b/dist/css/b-to-b-bundle.css` — generated CSS artifacts; never commit them under `public/css/`.
 - `scripts/build.js` — retain only apex, B2C, and legacy B2B compatibility routing.
 - `public/routing/apex-to-b2b-redirect.html` — static apex redirect document to canonical B2B host.
 - `public/routing/legacy-b-to-b-to-b2b-redirect.html` — compatibility redirect for legacy B2B root path.
@@ -78,16 +81,20 @@ This plan changes B2B build ownership, GitHub Pages deployment, static routing, 
 | TRACE-010 | anti-pattern | Anti-Pattern-HOSTCUT-004 | docs/anti-patterns/host-migration-cloudflare-redirect-anti-patterns.md | Records the generated-bundle-as-source migration failure. |
 | TRACE-011 | contract | Contract-HOSTCUT-001 | docs/contracts/host-migration-cloudflare-redirect-contracts.md | Requires landing consumers to use the package-owned counter action. |
 | TRACE-012 | anti-pattern | Anti-Pattern-HOSTCUT-005 | docs/anti-patterns/host-migration-cloudflare-redirect-anti-patterns.md | Records duplicate stat-counter implementations across repositories. |
+| TRACE-013 | specification | REQ-B2B-004, CON-B2B-003 | docs/Specifications/host-migration-cloudflare-redirect-specifications.md | Requires B2B CSS sources to generate a dist-only bundle. |
+| TRACE-014 | contract | Contract-HOSTCUT-002 | docs/contracts/host-migration-cloudflare-redirect-contracts.md | Enforces JavaScript and CSS source/artifact boundaries across landing consumers. |
+| TRACE-015 | anti-pattern | Anti-Pattern-HOSTCUT-006 | docs/anti-patterns/host-migration-cloudflare-redirect-anti-patterns.md | Records why generated CSS and JavaScript bundles became tracked public source. |
 
 ## 2. Execution Gates
 
 This plan does not redefine requirements or constraints. Execution is governed by:
 
 - `REQ-ROUT-001–004` and `CON-ROUT-001` for the fixed Cloudflare redirect.
-- `REQ-B2B-001–002` and `CON-B2B-001` for the canonical B2B Pages host and application-entry boundary.
+- `REQ-B2B-001–004` and `CON-B2B-001, CON-B2B-003` for the canonical B2B Pages host, application-entry boundary, and CSS artifact boundary.
 - `REQ-B2C-001–013` and `CON-B2C-001–006` for the independently reproducible B2C Pages host.
 - `Contract-ROUT-001`, `Contract-B2C-001`, and `Contract-B2C-002` for hard runtime and build invariants.
-- `Anti-Pattern-HOSTCUT-001–005` for confirmed migration failure modes.
+- `Anti-Pattern-HOSTCUT-001–006` for confirmed migration failure modes.
+- `Contract-HOSTCUT-002` and `Anti-Pattern-HOSTCUT-006` for generated JavaScript/CSS source/artifact ownership.
 - `Contract-HOSTCUT-001` and `Anti-Pattern-HOSTCUT-005` for shared stat-counter ownership and package-version alignment.
 
 ## 3. Implementation Steps (TDD Workflow)
@@ -138,8 +145,8 @@ Machine task table:
 
 - **PHASE-HOSTCUT-003 Goal:** Establish the B2B repository build and deploy it as an independent GitHub Pages site.
 - **Preconditions:** The B2B source and assets are present in `likened-b2b`; GitHub Pages is configured to use GitHub Actions.
-- **Completion Criteria:** `likened-b2b` builds a self-contained `dist/` artifact, deploys it with GitHub Actions, and B2B CTA links reach the unchanged webapp host.
-- **Verification Commands:** `npm run build`; `rg "https://likened\.net/app/#/dashboard" public/index.html`; GitHub Actions Pages deployment status.
+- **Completion Criteria:** `likened-b2b` builds a self-contained `dist/` artifact, generates CSS from its editable source entry point, deploys it with GitHub Actions, and B2B CTA links reach the unchanged webapp host.
+- **Verification Commands:** `npm run build`; `test ! -e public/css/b-to-b-bundle.css && test -f dist/css/b-to-b-bundle.css`; `rg "https://likened\.net/app/#/dashboard" public/index.html`; GitHub Actions Pages deployment status.
 
 Human checklist:
 
@@ -148,6 +155,7 @@ Human checklist:
 | TASK-HOSTCUT-005 | Add B2B esbuild build inputs and local module dependencies | [x] | 2026-09-21 |
 | TASK-HOSTCUT-006 | Add B2B GitHub Actions Pages workflow and custom-domain deployment | [x] | 2026-09-21 |
 | TASK-HOSTCUT-007 | Validate deployed B2B links to the unchanged webapp application route | [x] | 2026-09-21 |
+| TASK-HOSTCUT-016 | Restore B2B CSS source/artifact separation and generate both CSS files under `dist/` | [x] | 2026-09-28 |
 
 Machine task table:
 
@@ -156,11 +164,12 @@ Machine task table:
 | TASK-HOSTCUT-005 | Add B2B esbuild entry configuration and include imported helper modules in the B2B source tree | ../likened-b2b/package.json; ../likened-b2b/scripts/build.js; ../likened-b2b/public/js | build | update | TASK-HOSTCUT-004 | REQ-B2B-001 | completed | null | npm run build && ! rg "^import " dist/js/landing-page.js | Build exits 0 and `dist/js/landing-page.js` contains no unresolved browser imports | Restore standalone static-copy build and local helper layout |
 | TASK-HOSTCUT-006 | Deploy B2B `dist/` through GitHub Actions Pages with `b2b.likened.net` as its custom domain | ../likened-b2b/.github/workflows/deploy-pages.yml; ../likened-b2b/CNAME | GitHub Pages workflow | create | TASK-HOSTCUT-005 | REQ-B2B-001 | completed | null | GitHub Actions deployment status and `curl -sS -o /dev/null -w "%{http_code}" https://b2b.likened.net/` | Pages deployment succeeds and B2B returns HTTP 200 | Disable workflow and restore previous Pages source |
 | TASK-HOSTCUT-007 | Convert B2B application-entry links to the preserved webapp URL and validate production navigation | ../likened-b2b/public/index.html; ../likened-b2b/public/pricing.html | application-entry anchors | update | TASK-HOSTCUT-006 | REQ-B2B-002, CON-B2B-001 | completed | null | rg "https://likened\.net/app/#/dashboard" public/index.html public/pricing.html | Every application-entry link opens the existing webapp | Restore prior link targets |
+| TASK-HOSTCUT-016 | Generate B2B Tailwind and page CSS from local sources and reject public bundles | ../likened-b2b/scripts/build.js; ../likened-b2b/src/css; ../likened-b2b/tailwind.config.js; ../likened-b2b/public/css | buildTailwindCSS; buildCSSBundle | update | TASK-HOSTCUT-007 | REQ-B2B-004, CON-B2B-003 | completed | null | npm run build && test ! -e public/css/b-to-b-bundle.css && test ! -e public/css/tailwind.min.css && test -f dist/css/b-to-b-bundle.css && test -f dist/css/tailwind.min.css | Build creates both deployable CSS files only under ignored `dist/` and fails if either returns to `public/` | Restore CSS source inputs and remove generated output from `public/` |
 
 ### Implementation Phase 4 — B2C Replication and Source Remediation
 
 - **PHASE-HOSTCUT-004 Goal:** Publish `likened-webapp/public/index.html` and its B2C companion pages as an independent GitHub Pages site at `b2c.likened.net` without changing the product application at `likened.net/app/`.
-- **Current baseline (2026-09-26):** The public hosts return successfully. B2C source/artifact separation now covers both browser entry points after `public/js/pricing.js` was restored from a committed bundle to maintainable source. `@ksimonnet/utils@2.1.0` adds the package-owned counter action; webapp and augemented-sourcer declare `^2.1.0`, while B2B and B2C still declare `^2.0.0`. Their source calls the new action, so dependency manifests and locks must be updated before a clean install or deployment.
+- **Current baseline (2026-09-28):** B2C source/artifact separation covers both browser entry points. All four consumers resolve `@ksimonnet/utils@2.1.0`. The dedicated B2B repository now generates both Tailwind and page CSS into ignored `dist/css/`; the initially committed public CSS bundles are removed and the build rejects their reintroduction. B2C mobile navigation and desktop iceberg overlay alignment have also been restored in the canonical shared CSS.
 - **Precondition:** The `2.1.0` package release is available; consumer registry access is configured through project `.npmrc` files or the documented CI authentication setup.
 
 1. Copy the B2C landing source, pricing page, referenced `assets/`, vendor scripts, and the final B2C CSS bundle into `likened-b2c/public/`. Keep its `CNAME` file at repository root with only `b2c.likened.net`.
@@ -210,6 +219,7 @@ Machine task table:
 - Do not assume cache freshness when checking generated CSS. Rebuild `dist/`, use no-cache preview settings where possible, or cache-bust the asset URL during verification.
 - Keep deployable artifacts self-contained. Copy or generate all CSS, local assets, and bundled JavaScript from files available in the deployment repository.
 - A browser-executable generated bundle is not a maintainable source entry point. Preserve source imports under `public/js/` and emit bundled code only under `dist/js/`.
+- The B2B migration initially committed generated B2B and Tailwind CSS because the standalone repository received the webapp build output without CSS sources or a Tailwind input/config. Its later build copied `public/` and bundled only JavaScript, so no build step could replace the checked-in CSS. Keep B2B CSS sources under `src/css/`, scan local HTML/JS with `tailwind.config.js`, and generate both stylesheets in `dist/css/`.
 
 ## 4. Alternatives
 
@@ -261,6 +271,7 @@ Machine task table:
 | TEST-HOSTCUT-006 | dependency integration | REQ-B2B-003, REQ-B2C-014, Contract-HOSTCUT-001 | In each B2B/B2C repo run `npm ci && npm run build && npm ls @ksimonnet/utils` | Both clean builds resolve 2.1.0 or later and browser output includes the shared action |
 | TEST-HOSTCUT-007 | duplicate ownership | CON-B2B-002, CON-B2C-007, Contract-HOSTCUT-001 | `rg "function animateStatCounter|export function animateStatCounter"` in landing consumer sources | No consumer-local implementation remains |
 | TEST-HOSTCUT-008 | package regression | Contract-HOSTCUT-001 | `cd ../private && npm test -- --grep animateStatCounter` and build all four consumers | Shared action tests and all consumer builds pass |
+| TEST-HOSTCUT-009 | CSS artifact boundary | REQ-B2B-004, CON-B2B-003, Contract-HOSTCUT-002 | `cd ../likened-b2b && npm run build && test ! -e public/css/b-to-b-bundle.css && test ! -e public/css/tailwind.min.css && test -f dist/css/b-to-b-bundle.css && test -f dist/css/tailwind.min.css` | The clean B2B build generates both CSS artifacts from maintained sources; no generated stylesheets are kept in `public/` |
 
 ## 8. Risks & Assumptions
 
@@ -278,6 +289,7 @@ Machine task table:
 - [x] `likened-b2b` Pages Source is GitHub Actions and deploys its `dist/` artifact.
 - [x] `b2b.likened.net` is bound only to `likened-b2b` GitHub Pages.
 - [x] B2B application-entry links open `https://likened.net/app/#/dashboard`.
+- [x] B2B CSS is generated from `src/css/tailwind.css`, `tailwind.config.js`, and `src/css/b-to-b.css` into `dist/css/`; no generated CSS is committed in `public/css/`.
 - [x] The webapp remains deployed independently at `https://likened.net/app/`.
 - [x] Production B2B page and app-entry navigation pass manual smoke testing.
 - [x] `b2c.likened.net` is deployed through an independent self-contained Pages artifact.
@@ -302,6 +314,7 @@ Machine task table:
 | 2026-09-26 | 1.6 | Added package consumer cutover phase and validation because B2B/B2C still lock utils 2.0.0 |
 | 2026-09-26 | 1.7 | Completed B2B/B2C adoption of utils 2.1.0 and validated clean builds for all consumers |
 | 2026-09-26 | 1.5 | Added shared stat-counter action package cutover; marked B2B/B2C dependency and lockfile updates as outstanding |
+| 2026-09-28 | 1.8 | Recorded the B2B generated-CSS migration failure and completed a dist-only CSS build boundary |
 
 ## 11. References
 

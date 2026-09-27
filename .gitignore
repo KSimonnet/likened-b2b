@@ -4,6 +4,8 @@ node_modules/
 
 # Build output: final, runnable or deployable version of the project
 dist/
+public/css/b-to-b-bundle.css
+public/css/tailwind.min.css
 
 # IDE
 .vscode/

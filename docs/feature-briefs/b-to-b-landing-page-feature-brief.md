@@ -17,11 +17,13 @@ Likened has no public-facing entry point for its enterprise / Talent Acquisition
 **Files affected:**
 - `public/b-to-b.html` — new file; BtoB landing page targeting TA Partners, Heads of Talent, and HR Directors
 - `public/b-to-b-pricing.html` — new file; BtoB pricing page (scope extended from original brief — documented here per governance rule)
-- `public/css/pages/b-to-b.css` — new file; BtoB-specific style overrides (hero copy, stats layout, differentiators grid)
+- `src/css/pages/b-to-b.css` — BtoB-specific style overrides (hero decoration, stats layout, differentiators grid)
 - `public/js/landing-page.js` — new file; invokes `AnimationManager.actions.animateStatCounter`
 - `@ksimonnet/utils/web/classes/modules/animation-manager.js` — owns the reusable stat-counter action
 - `public/js/landing-page.js` — retains page-specific observer orchestration and invokes the package action
-- `scripts/build.js` — updated to copy both BtoB HTML files, bundle `b-to-b-bundle.css`, and build `landing-page.js`
+- `src/css/b-to-b.css` and `src/css/{shared,pages}/` — editable CSS entry point and source modules for the standalone B2B build
+- `src/css/tailwind.css` and `tailwind.config.js` — editable Tailwind input and local HTML/JavaScript content scan
+- `scripts/build.js` — copies the BtoB HTML files, generates `dist/css/tailwind.min.css` and `dist/css/b-to-b-bundle.css`, and builds `landing-page.js`
 
 **Unchanged:**
 - `public/index.html` content and sections
@@ -56,7 +58,7 @@ Likened has no public-facing entry point for its enterprise / Talent Acquisition
 
 - **Tech stack stays vanilla** — HTML / CSS / JS + TailwindCSS. No framework (React, Vue, etc.) introduced.
 - **`b-to-b.html` is a new standalone file** — mirrors the HTML skeleton of `index.html` (shared header, footer, dark-mode toggle, `tailwind.min.css`, CSS bundle); content and copy are entirely BtoB.
-- **CSS bundle**: `b-to-b-bundle.css` = same shared stack as `landing-page-bundle.css` (brand-kit + page-style + landing-page.css + slider-switch + modal) **plus** `b-to-b.css`. This avoids forking the shared stylesheet while allowing BtoB-specific overrides.
+- **CSS bundles**: `dist/css/tailwind.min.css` is generated from the local Tailwind input/config. `dist/css/b-to-b-bundle.css` is generated from `src/css/b-to-b.css`, which imports the package-owned brand kit, shared CSS source modules, and B2B page overrides. Neither generated bundle is committed under `public/css/`.
 - **Stat-counter animation is an `AnimationManager` action** — `AnimationManager.actions.animateStatCounter` is the single implementation in `@ksimonnet/utils`; B2B and B2C entry points own only their IntersectionObserver orchestration. This resolves the cross-repository DRY violation.
 - **BtoB stats are presented without external source citations** — statistics are first-party industry analysis; no hyperlinks are added (no external source available).
 - **CTA model is purpose-split** — product-entry CTAs use "Sign In" and route to `app/#/dashboard`; the Section 8 discovery CTA uses "Contact Us" and routes to `https://forms.gle/p67EoZcdRRpGnTfZA`; Section 9 reciprocal redirect remains link-only and routes to B2C landing.

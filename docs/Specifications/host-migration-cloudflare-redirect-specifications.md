@@ -1,8 +1,8 @@
 ---
 goal: "Preserve canonical B2B routing and independently build the B2C landing host"
-version: 1.2
+version: 1.3
 date_created: 2026-09-22
-last_updated: 2026-09-26
+last_updated: 2026-09-28
 status: "Active"
 tags: ["migration", "routing", "github-pages", "b2c"]
 ---
@@ -11,7 +11,7 @@ tags: ["migration", "routing", "github-pages", "b2c"]
 
 ## Overview
 
-**Context:** Cloudflare routes legacy B2B requests to the dedicated B2B Pages site. The B2C migration establishes a separately deployable marketing host without relocating the product application. The initial B2C migration copied a generated JavaScript bundle into `public/js/landing-page.js`; remediation must restore an editable source entry point and generate the browser bundle only in `dist/`.
+**Context:** Cloudflare routes legacy B2B requests to the dedicated B2B Pages site. The B2C migration establishes a separately deployable marketing host without relocating the product application. The migrations copied generated JavaScript and CSS bundles into public source trees; remediation keeps editable entry points and source modules separate from generated artifacts under `dist/`.
 
 **User-Facing Capability:**
 - Visitors can open the B2C landing page at `https://b2c.likened.net/`.
@@ -37,6 +37,8 @@ Trigger justification: The migration introduces a new public B2C host and change
 - **REQ-B2B-001:** The dedicated B2B repository MUST build and deploy a self-contained Pages artifact to `https://b2b.likened.net/`.
 - **REQ-B2B-002:** Every B2B application-entry link MUST target `https://likened.net/app/#/dashboard`.
 - **REQ-B2B-003:** `likened-b2b` MUST declare and lock `@ksimonnet/utils@^2.1.0` or later and use `AnimationManager.actions.animateStatCounter` for stat-counter animation.
+- **REQ-B2B-004:** `likened-b2b` MUST generate `dist/css/tailwind.min.css` from `src/css/tailwind.css` and `tailwind.config.js`, and bundle `src/css/b-to-b.css` into `dist/css/b-to-b-bundle.css` during `npm run build`; neither generated file may be committed under `public/css/`.
+- **REQ-B2B-004:** `likened-b2b` MUST keep editable CSS entry points and source modules outside `public/`, generate `dist/css/b-to-b-bundle.css` during `npm run build`, and MUST NOT commit that generated bundle under `public/css/`.
 
 ### Canonical B2C Host
 
@@ -70,6 +72,8 @@ Trigger justification: The migration introduces a new public B2C host and change
 - **CON-ROUT-001:** The Legacy B2B redirect destination MUST be the fixed canonical URL `https://b2b.likened.net/`; request-controlled hosts, paths, and queries MUST NOT influence it.
 - **CON-B2B-001:** The B2B Pages site MUST NOT host, proxy, or replace the Webapp Application Route.
 - **CON-B2B-002:** The B2B landing source MUST NOT define a local stat-counter animation when that behavior is provided by `@ksimonnet/utils`.
+- **CON-B2B-003:** Both B2B generated CSS files MUST remain under ignored `dist/`, and the build MUST fail if either generated file is present under `public/css/`.
+- **CON-B2B-003:** B2B generated CSS MUST remain in ignored `dist/`; the build MUST fail if `public/css/b-to-b-bundle.css` is present.
 - **CON-B2C-001:** The B2C Pages site MUST NOT host, proxy, or replace `https://likened.net/app/`.
 - **CON-B2C-002:** The existing B2B canonical host and the Cloudflare legacy B2B redirect contract MUST remain unchanged.
 - **CON-B2C-003:** The B2C Pages artifact MUST be buildable from sources and dependencies available to its own deployment workflow.

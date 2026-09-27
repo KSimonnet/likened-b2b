@@ -1,6 +1,6 @@
 # Host Migration Anti-Patterns
 
-Trigger justification: Contracts B2C-001 and B2C-002 and constraints CON-B2C-003, CON-B2C-004, and CON-B2C-006 were violated during the landing-host migrations: raw modules reached Pages, package authorization failed, and the B2C migration later committed a generated bundle as source.
+Trigger justification: Contracts B2C-001 and B2C-002 and constraints CON-B2C-003, CON-B2C-004, CON-B2C-006, and CON-B2B-003 were violated during the landing-host migrations: raw modules reached Pages, package authorization failed, and generated JavaScript and CSS bundles were committed as source.
 
 ## Anti-Pattern-HOSTCUT-001: Deploying Raw Browser Module Source to GitHub Pages (🔴 CRITICAL)
 
@@ -51,6 +51,76 @@ rg '^import ' dist/js
 
 **Reference:**
 - Contract: [host-migration-cloudflare-redirect-contracts.md](../contracts/host-migration-cloudflare-redirect-contracts.md)
+
+## Anti-Pattern-HOSTCUT-006: Committing a Generated Bundle as Public Source (🔴 CRITICAL)
+
+**Severity:** CRITICAL
+
+**Category:** Source/Artifact Ownership
+
+**Violates:**
+- Contract-HOSTCUT-002 — Separate Sources from Deployable Bundles
+- REQ-B2B-004 — Generate deployable B2B CSS under `dist/`
+- CON-B2B-003 — Keep generated B2B CSS out of the committed source tree
+- REQ-B2C-011/012 — Keep B2C JavaScript source separate from generated bundles
+
+**Root Cause:** The initial dedicated-B2B repository commit (`4ff04d5`) included generated `public/css/b-to-b-bundle.css` and `public/css/tailwind.min.css`. Its later build copied `public/` and bundled only JavaScript, leaving both stylesheets as undeclared source prerequisites. The B2C migration repeated the pattern by copying the generated `landing-page-bundle.css` into its `public/css/` tree rather than generating it from the maintained `landing-page.css` source entry point. Earlier B2C work also copied generated JavaScript bundles into `public/js/`.
+
+**Definition:** Keeping generated JavaScript or CSS bundles in `public/` and deploying them by copying the source tree instead of building them from editable source entry points.
+
+**Why it's harmful:** The standalone deployment depends on opaque generated output, source changes can drift from deployed behavior, shared styles can diverge, and a clean build cannot prove that the delivered bundle was produced from maintainable inputs.
+
+**Code examples:**
+
+```text
+# BAD - generated output is committed as public source.
+public/css/b-to-b-bundle.css
+public/css/tailwind.min.css
+public/css/landing-page-bundle.css
+public/js/landing-page.js  # generated IIFE replacing the maintained source module
+```
+
+```css
+/* GOOD - maintain the B2C landing stylesheet source, not its generated bundle. */
+/* Source entry point: likened-webapp/public/css/pages/landing-page.css */
+```
+
+```javascript
+// GOOD - emit CSS bundles under dist/ from maintained entry points.
+await esbuild.build({
+  entryPoints: ["src/css/b-to-b.css"],
+  bundle: true,
+  outfile: "dist/css/b-to-b-bundle.css"
+});
+```
+
+**Detection strategy:**
+
+```bash
+cd ../likened-b2b
+test ! -e public/css/b-to-b-bundle.css
+test ! -e public/css/tailwind.min.css
+test -f dist/css/b-to-b-bundle.css
+test -f dist/css/tailwind.min.css
+
+cd ../likened-b2c
+test ! -e public/css/landing-page-bundle.css
+test -f dist/css/landing-page-bundle.css
+! rg -q '^\(\(\) => \{' public/js/landing-page.js public/js/pricing.js
+```
+
+Each repository build must fail if a generated bundle is reintroduced at its public source path.
+
+**Correction strategy:**
+1. Keep the B2B CSS entry points under `src/css/` and resolve shared styles from declared packages or maintained local source modules.
+2. Keep `likened-webapp/public/css/pages/landing-page.css` as the sole B2C landing CSS source entry point; generate `landing-page-bundle.css` only in `likened-b2c/dist/css/`.
+3. Keep B2C JavaScript entry points as source and emit their bundles only under `likened-b2c/dist/js/`.
+4. Remove generated bundles from `public/`, ignore their old paths, and upload `dist/` through Pages.
+
+**Reference:**
+- Contract: [host-migration-cloudflare-redirect-contracts.md](../contracts/host-migration-cloudflare-redirect-contracts.md)
+- Specification: [b-to-b-landing-page-specifications.md](../Specifications/b-to-b-landing-page-specifications.md)
+
 
 ## Anti-Pattern-HOSTCUT-004: Committing a Generated Bundle as the Source Entry Point (🔴 CRITICAL)
 
