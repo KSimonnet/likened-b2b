@@ -23,17 +23,17 @@ tags: ['landing-page', 'b2b', 'talent-acquisition', 'marketing']
 `b-to-b.html` and `b-to-b-pricing.html` MUST load `css/tailwind.min.css` and `css/b-to-b-bundle.css` from `dist/`. The build generates Tailwind from `src/css/tailwind.css` and `tailwind.config.js`; it generates the B2B bundle from the `src/css/b-to-b.css` entry point. That entry point imports these sources in order:
 
 1. `@ksimonnet/likened-shared/styles` (brand kit)
-2. `src/css/shared/likened-style.css`
-3. `src/css/shared/page-style.css`
-4. `src/css/shared/modal.css`
-5. `src/css/shared/slider-switch.css`
+2. `@ksimonnet/likened-shared/styles/likened-style.css`
+3. `@ksimonnet/likened-shared/styles/page-style.css`
+4. `@ksimonnet/likened-shared/styles/modal.css`
+5. `@ksimonnet/likened-shared/styles/slider-switch.css`
 6. `src/css/pages/b-to-b.css`
 
 The generated files MUST exist only under `dist/css/`; neither `public/css/b-to-b-bundle.css` nor `public/css/tailwind.min.css` may be committed or present in the source tree. Neither `pricing.css` nor any other page-specific stylesheet is included.
 
-Before writing any new CSS class in `b-to-b.css`, the full shared stack MUST be checked. If an equivalent class exists in any of the files above, it MUST be reused — not duplicated (Contract-CSS-001). All colour, shadow, spacing, and font values MUST use `var(--likened-*)` tokens (Contract-CSS-004). No `style=""` attributes and no `element.style.*` assignments for visual properties (Contract-CSS-011).
+Before writing any new CSS class in `b-to-b.css`, the package-owned shared stack MUST be checked. If an equivalent class exists in any of the files above, it MUST be reused — not duplicated (Contract-CSS-001). All colour, shadow, spacing, and font values MUST use `var(--likened-*)` tokens (Contract-CSS-004). No `style=""` attributes and no `element.style.*` assignments for visual properties (Contract-CSS-011).
 
-Canonical shared callout classes (`.cta-callout`, `.reciprocal-redirect`) MUST be defined in `public/css/shared/page-style.css`, not duplicated in `public/css/pages/b-to-b.css`.
+Canonical shared callout classes (`.cta-callout`, `.reciprocal-redirect`) MUST be defined in `@ksimonnet/likened-shared/styles/page-style.css`, not duplicated in B2B page CSS.
 
 ### REQ-INF-002 — Dark mode parity
 

@@ -147,7 +147,7 @@ expectB2CApplicationEntryLinks().toEqual([
 
 **Source:** REQ-B2B-004, CON-B2B-003, REQ-B2C-011/012, CON-B2C-006, Anti-Pattern-HOSTCUT-004, Anti-Pattern-HOSTCUT-006.
 
-**Rule:** Source entry points MUST remain editable and generated bundles MUST be emitted only under ignored `dist/` paths. For B2B CSS, the entry points are `src/css/b-to-b.css` and `src/css/tailwind.css`, with `tailwind.config.js` controlling utility generation; the outputs are `dist/css/b-to-b-bundle.css` and `dist/css/tailwind.min.css`. For B2C landing CSS, `likened-webapp/public/css/pages/landing-page.css` is the sole CSS entry point and `landing-page-bundle.css` is generated only under `likened-b2c/dist/css/`. B2C JavaScript sources remain under `public/js/` and their bundles are generated under `dist/js/`. No generated bundle may be committed under `public/`.
+**Rule:** Source entry points MUST remain editable and generated bundles MUST be emitted only under ignored `dist/` paths. For B2B CSS, the entry points are `src/css/b-to-b.css` and `src/css/tailwind.css`, with `tailwind.config.js` controlling utility generation; the outputs are `dist/css/b-to-b-bundle.css` and `dist/css/tailwind.min.css`. For B2C landing CSS, `likened-shared/src/css/landing-page.css` is the sole CSS entry point and `landing-page.css` is generated only under `likened-b2c/dist/css/`. B2C JavaScript sources remain under `public/js/` and their bundles are generated under `dist/js/`. No generated bundle may be committed under `public/`.
 
 **Postconditions (@post):**
 - Clean B2B and B2C builds emit their declared CSS and JavaScript bundles under their respective `dist/` directories.
@@ -157,7 +157,7 @@ expectB2CApplicationEntryLinks().toEqual([
 **Tests:**
 - Build integration: run `npm run build` in `likened-b2b` and `likened-b2c`.
 - B2B boundary: no `public/css/b-to-b-bundle.css` or `public/css/tailwind.min.css`; both outputs exist under `dist/css/`.
-- B2C boundary: `landing-page.css` is the only landing CSS source entry point, no `public/css/landing-page-bundle.css` exists, and the generated bundle exists under `dist/css/`.
+- B2C boundary: `likened-shared/src/css/landing-page.css` is the only landing CSS entry point, no generated landing stylesheet exists under `public/css/`, and `dist/css/landing-page.css` is built from the package export.
 - Build enforcement: each consumer build MUST fail if its generated public bundle is reintroduced.
 
 **Consequences of Violation:**

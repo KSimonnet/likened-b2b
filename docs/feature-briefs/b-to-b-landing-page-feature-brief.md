@@ -29,7 +29,7 @@ Likened has no public-facing entry point for its enterprise / Talent Acquisition
 - `public/index.html` content and sections
 - `public/pricing.html` — untouched (BtoC pricing page)
 - `public/app/` — untouched
-- `public/css/pages/landing-page.css` — no changes; shared styles are inherited via the CSS bundle
+- `@ksimonnet/likened-shared/styles/landing-page.css` — canonical shared landing styles consumed through the generated CSS bundle
 - `public/js/dark-mode.js` — reused as-is in `b-to-b.html`
 - All existing image assets — some are reused; no new images are required for MVP
 

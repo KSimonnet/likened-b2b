@@ -6,7 +6,7 @@
 
 ## 0. Implementation Governance (MANDATORY)
 
-- **Scope gate**: Covers `public/b-to-b.html` (new), `public/b-to-b/pricing.html` (new), `public/css/pages/b-to-b.css` (new), `public/js/landing-page.js` (new), the package-owned `AnimationManager.actions.animateStatCounter`, `public/js/landing-page.js` (consumer cutover only), and `scripts/build.js` (additive — new entries only). Chrome extension, back-end, and `pricing.html` are **explicitly out of scope**.
+- **Scope gate**: Covers `public/b-to-b.html` (new), `public/b-to-b/pricing.html` (new), `src/css/pages/b-to-b.css` (new), `public/js/landing-page.js` (new), the package-owned `AnimationManager.actions.animateStatCounter`, `public/js/landing-page.js` (consumer cutover only), and `scripts/build.js` (additive — new entries only). Chrome extension, back-end, and `pricing.html` are **explicitly out of scope**.
 - **ADRs / Contracts / Anti-Patterns**: Scoped N/A for this feature. The feature is a static marketing page with no complex runtime invariants, no event message passing, and no shared state. All design decisions are captured in the Specifications and Feature Brief.
 
 ---
@@ -22,7 +22,7 @@ New BtoB public-facing entry point converting Talent Acquisition professionals i
 **Files to create (new):**
 - `public/b-to-b.html`
 - `public/b-to-b-pricing.html`
-- `public/css/pages/b-to-b.css`
+- `src/css/pages/b-to-b.css`
 - `public/js/landing-page.js`
 
 **Files to modify (additive / refactor):**
@@ -36,7 +36,7 @@ New BtoB public-facing entry point converting Talent Acquisition professionals i
 
 | Decision | Detail |
 |---|---|
-| CSS bundle | `b-to-b-bundle.css` = brand-kit + page-style + landing-page.css + slider-switch + modal + b-to-b.css |
+| CSS bundle | `dist/css/b-to-b-bundle.css` = package brand kit + package shared styles + `src/css/pages/b-to-b.css` |
 | CTA behavior | Product-entry CTAs use "Sign In" → `app/#/dashboard`; Section 8 discovery CTA uses "Contact Us" → `https://forms.gle/p67EoZcdRRpGnTfZA`; reciprocal redirect uses "Learn more →" → `../index.html` |
 | Stat counter | Implemented once as `AnimationManager.actions.animateStatCounter`; landing entry points own only observer orchestration |
 | Stats 1 & 2 | Animated via `data-target` + `data-suffix="%"` + IntersectionObserver (threshold 0.3, once) |
@@ -104,7 +104,7 @@ Write all failing tests before writing source code. Each test MUST fail (RED) be
 **Prerequisite:** IP-1 GREEN.
 
 - [ ] Open `scripts/build.js` — add two entries to `copyPublicFiles`: `b-to-b.html` and `b-to-b-pricing.html` — **Spec:** REQ-BUILD-001
-- [ ] Add `b-to-b-bundle.css` entry to `prepareCSS` (brand-kit → page-style → landing-page.css → slider-switch → modal → b-to-b.css, in that order) — **Spec:** REQ-BUILD-002
+- [ ] Add `b-to-b-bundle.css` entry to `prepareCSS` using `@ksimonnet/likened-shared` CSS exports followed by B2B page CSS — **Spec:** REQ-BUILD-002
 - [ ] Add `landing-page.js` entry to `buildJS` (`iife` format, same config as `landing-page.js`) — **Spec:** REQ-BUILD-003
 - [ ] Run `npm run build` — must complete without errors (placeholder empty files for HTML/CSS/JS are sufficient to pass the build at this stage)
 - [ ] Run `npm test` — `b-to-b-build.test.js` turns GREEN
@@ -113,7 +113,7 @@ Write all failing tests before writing source code. Each test MUST fail (RED) be
 
 ---
 
-### Phase IP-3: `public/css/pages/b-to-b.css` + `public/js/landing-page.js`
+### Phase IP-3: `src/css/pages/b-to-b.css` + `public/js/landing-page.js`
 
 **Prerequisite:** IP-2 GREEN.
 
@@ -124,12 +124,11 @@ Write all failing tests before writing source code. Each test MUST fail (RED) be
 
 #### IP-3b: `b-to-b.css`
 
-- [ ] Create `public/css/pages/b-to-b.css` — add only classes not already present in the shared CSS stack; use `var(--likened-*)` tokens throughout; no `style=""` attributes — **Spec:** REQ-INF-001 (CSS-001, CSS-004, CSS-011)
+- [ ] Create `src/css/pages/b-to-b.css` — add only classes not already present in `@ksimonnet/likened-shared` CSS exports; use `var(--likened-*)` tokens throughout; no `style=""` attributes — **Spec:** REQ-INF-001 (CSS-001, CSS-004, CSS-011)
 - [ ] Required layout classes to define:
-  - `.b2b-stats-hook-grid` — 3-column stats grid (mirrors BtoC stats hook; check `landing-page.css` first)
+  - `.b2b-stats-hook-grid` — 3-column stats grid (mirrors BtoC stats hook; check `@ksimonnet/likened-shared/styles/landing-page.css` first)
   - `.b2b-differentiator-grid` — 6-item 2–3-column grid (Key Differentiators section)
-  - `.cta-callout` — full-width CTA callout block style for guarantee/discovery CTA sections
-  - `.reciprocal-redirect` — informational reciprocal redirect style (link-only, no CTA button)
+  - Reuse package-owned `.cta-callout` and `.reciprocal-redirect`; do not redefine them locally
   - Any hero copy sizing overrides specific to BtoB hero
 - [ ] Run `npm run build` — verify `dist/css/b-to-b-bundle.css` is produced
 
@@ -262,11 +261,11 @@ Build each section in spec order. After each section, open the file in a browser
 
 ### Already Available
 
-- ✅ `shared-css/likened-brand-kit.css` — design tokens, colours, typography
-- ✅ `public/css/shared/page-style.css` — base layout classes (`section-split`, `hero`, etc.)
-- ✅ `public/css/pages/landing-page.css` — landing page layout classes (stats hook, section grids)
-- ✅ `public/css/shared/slider-switch.css` — dark mode toggle component
-- ✅ `public/css/shared/modal.css` — modal base styles
+- ✅ `@ksimonnet/likened-shared/styles` — design tokens, colours, typography
+- ✅ `@ksimonnet/likened-shared/styles/page-style.css` — base layout classes (`section-split`, `hero`, etc.)
+- ✅ `@ksimonnet/likened-shared/styles/landing-page.css` — composed landing entrypoint and layout classes
+- ✅ `@ksimonnet/likened-shared/styles/slider-switch.css` — dark mode toggle component
+- ✅ `@ksimonnet/likened-shared/styles/modal.css` — modal base styles
 - ✅ `public/js/dark-mode.js` — dark mode script (reused as-is)
 - ✅ `scripts/build.js` — build pipeline (extended, not replaced)
 - ✅ `assets/images/executive-search-ta-network-science-cropped.png` — How It Works image
@@ -278,7 +277,7 @@ Build each section in spec order. After each section, open the file in a browser
 
 - 🆕 `AnimationManager.actions.animateStatCounter` — package-owned reusable animation action
 - 🆕 `public/js/landing-page.js` — invokes the package action; registers IntersectionObserver
-- 🆕 `public/css/pages/b-to-b.css` — BtoB-specific layout overrides
+- 🆕 `src/css/pages/b-to-b.css` — BtoB-specific layout overrides
 - 🆕 `public/b-to-b.html` — BtoB landing page
 - 🆕 `public/b-to-b-pricing.html` — BtoB pricing page
 

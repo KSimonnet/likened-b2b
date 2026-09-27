@@ -64,7 +64,7 @@ rg '^import ' dist/js
 - CON-B2B-003 — Keep generated B2B CSS out of the committed source tree
 - REQ-B2C-011/012 — Keep B2C JavaScript source separate from generated bundles
 
-**Root Cause:** The initial dedicated-B2B repository commit (`4ff04d5`) included generated `public/css/b-to-b-bundle.css` and `public/css/tailwind.min.css`. Its later build copied `public/` and bundled only JavaScript, leaving both stylesheets as undeclared source prerequisites. The B2C migration repeated the pattern by copying the generated `landing-page-bundle.css` into its `public/css/` tree rather than generating it from the maintained `landing-page.css` source entry point. Earlier B2C work also copied generated JavaScript bundles into `public/js/`.
+**Root Cause:** The initial dedicated-B2B repository commit (`4ff04d5`) included generated `public/css/b-to-b-bundle.css` and `public/css/tailwind.min.css`. Its later build copied `public/` and bundled only JavaScript, leaving both stylesheets as undeclared source prerequisites. The B2C migration repeated the pattern by copying the generated landing bundle into `public/css/` rather than building from the package-owned `landing-page.css` entry point. Earlier B2C work also copied generated JavaScript bundles into `public/js/`.
 
 **Definition:** Keeping generated JavaScript or CSS bundles in `public/` and deploying them by copying the source tree instead of building them from editable source entry points.
 
@@ -82,7 +82,7 @@ public/js/landing-page.js  # generated IIFE replacing the maintained source modu
 
 ```css
 /* GOOD - maintain the B2C landing stylesheet source, not its generated bundle. */
-/* Source entry point: likened-webapp/public/css/pages/landing-page.css */
+/* Source entry point: likened-shared/src/css/landing-page.css */
 ```
 
 ```javascript
@@ -104,8 +104,9 @@ test -f dist/css/b-to-b-bundle.css
 test -f dist/css/tailwind.min.css
 
 cd ../likened-b2c
+test ! -e public/css/landing-page.css
 test ! -e public/css/landing-page-bundle.css
-test -f dist/css/landing-page-bundle.css
+test -f dist/css/landing-page.css
 ! rg -q '^\(\(\) => \{' public/js/landing-page.js public/js/pricing.js
 ```
 
@@ -113,7 +114,7 @@ Each repository build must fail if a generated bundle is reintroduced at its pub
 
 **Correction strategy:**
 1. Keep the B2B CSS entry points under `src/css/` and resolve shared styles from declared packages or maintained local source modules.
-2. Keep `likened-webapp/public/css/pages/landing-page.css` as the sole B2C landing CSS source entry point; generate `landing-page-bundle.css` only in `likened-b2c/dist/css/`.
+2. Keep `likened-shared/src/css/landing-page.css` as the sole B2C landing CSS source entry point; generate `landing-page.css` only in `likened-b2c/dist/css/`.
 3. Keep B2C JavaScript entry points as source and emit their bundles only under `likened-b2c/dist/js/`.
 4. Remove generated bundles from `public/`, ignore their old paths, and upload `dist/` through Pages.
 
