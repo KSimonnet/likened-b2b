@@ -3,7 +3,7 @@ plan_id: PLAN-HOSTCUT-001
 goal: Deploy canonical B2B and B2C landing hosts while preserving the webapp and legacy-route compatibility
 purpose: infrastructure
 component: host-routing
-version: 1.8
+version: 1.9
 date_created: 2026-09-19
 last_updated: 2026-09-28
 owner: Webapp Platform
@@ -218,6 +218,13 @@ Machine task table:
 - `rel="canonical"` metadata does not redirect local previews or production browsers; HTTP redirects must be implemented at Cloudflare or the serving layer.
 - `http-server -o` opens the local preview browser. Keep `npm run serve` simple; a custom server wrapper was unnecessary and caused avoidable debugging churn.
 - Do not assume cache freshness when checking generated CSS. Rebuild `dist/`, use no-cache preview settings where possible, or cache-bust the asset URL during verification.
+- Shared CSS does not guarantee responsive parity by itself: B2C omitted B2B's `header-nav-container--compact` opt-in, leaving its full navigation visible on mobile.
+- Generic button modifiers can lose to contextual selectors. `.hero .button-link` overrode `.button-link--tertiary`; inspect selector specificity and computed styles when a button looks wrong despite its modifier being present.
+- Compare B2B and B2C built pages at 390px and 430px CSS viewport widths. Browser device-pixel scaling can make the CSS viewport differ from the requested device size, so inspect `innerWidth`; cache-bust landing CSS after rebuilding `dist/`.
+- Keep responsive parity verification as a focused browser smoke check. A build-time regex validator for visual behavior was tried and removed as unnecessary complexity; ordinary builds cannot prove layout behavior.
+- A local build does not prove its inputs are tracked. Both landing CI builds failed when the Tailwind input/config existed only as untracked working-tree files; verify required inputs with `git ls-files` and test from a clean checkout.
+- `GITHUB_TOKEN` publishing authorization is package-specific: `packages: write` plus repository **Write** access under **Manage Actions access** is required. `npm whoami` and `npm view` prove authentication/read access only; permissions for another package or repository do not transfer.
+- Reusing a package version for changed CSS can leave consumers on cached tarball/lockfile content. Bump semver, verify the published version, update consumer lockfiles, and cache-bust CSS when comparing built output.
 - Keep deployable artifacts self-contained. Copy or generate all CSS, local assets, and bundled JavaScript from files available in the deployment repository.
 - A browser-executable generated bundle is not a maintainable source entry point. Preserve source imports under `public/js/` and emit bundled code only under `dist/js/`.
 - The B2B migration initially committed generated B2B and Tailwind CSS because the standalone repository received the webapp build output without CSS sources or a Tailwind input/config. Its later build copied `public/` and bundled only JavaScript, so no build step could replace the checked-in CSS. Keep B2B CSS sources under `src/css/`, scan local HTML/JS with `tailwind.config.js`, and generate both stylesheets in `dist/css/`.
@@ -273,6 +280,7 @@ Machine task table:
 | TEST-HOSTCUT-007 | duplicate ownership | CON-B2B-002, CON-B2C-007, Contract-HOSTCUT-001 | `rg "function animateStatCounter|export function animateStatCounter"` in landing consumer sources | No consumer-local implementation remains |
 | TEST-HOSTCUT-008 | package regression | Contract-HOSTCUT-001 | `cd ../private && npm test -- --grep animateStatCounter` and build all four consumers | Shared action tests and all consumer builds pass |
 | TEST-HOSTCUT-009 | CSS artifact boundary | REQ-B2B-004, CON-B2B-003, Contract-HOSTCUT-002 | `cd ../likened-b2b && npm run build && test ! -e public/css/landing-page.css && test ! -e public/css/b-to-b.css && test ! -e public/css/tailwind.min.css && test -f dist/css/landing-page.css && test -f dist/css/b-to-b.css && test -f dist/css/tailwind.min.css` | The clean B2B build generates package-owned shared, B2B page, and Tailwind CSS from sources without consumer composition wrappers |
+| TEST-HOSTCUT-010 | responsive smoke | Contract-B2C-003, Anti-Pattern-HOSTCUT-007 | Build B2B/B2C; inspect both at 390px and 430px CSS widths | B2C nav is hidden, hero CTAs are stacked/full-width, tertiary CTA is grey, and neither page overflows |
 
 ## 8. Risks & Assumptions
 
@@ -298,6 +306,7 @@ Machine task table:
 - [x] A clean B2C checkout installs locked dependencies and generates `dist/js/landing-page.js` and `dist/js/pricing.js` with no unresolved imports.
 - [x] B2B and B2C manifests and lockfiles resolve `@ksimonnet/utils` 2.1.0 or later.
 - [x] Package action tests and clean builds pass for B2B, B2C, webapp, and augemented-sourcer.
+- [x] B2C compact mobile header and vertically stacked hero CTAs match B2B behavior; mobile smoke checks confirm no horizontal overflow.
 - [ ] B2B and B2C manifests and lockfiles resolve `@ksimonnet/utils` 2.1.0 or later.
 - [ ] Package tests and clean builds pass for B2B, B2C, webapp, and augemented-sourcer using the published action.
 
@@ -316,6 +325,7 @@ Machine task table:
 | 2026-09-26 | 1.7 | Completed B2B/B2C adoption of utils 2.1.0 and validated clean builds for all consumers |
 | 2026-09-26 | 1.5 | Added shared stat-counter action package cutover; marked B2B/B2C dependency and lockfile updates as outstanding |
 | 2026-09-28 | 1.8 | Recorded the B2B generated-CSS migration failure and completed a dist-only CSS build boundary |
+| 2026-09-28 | 1.9 | Recorded B2C mobile header/CTA parity regression, cascade fix, and cross-consumer smoke-check lessons |
 
 ## 11. References
 

@@ -139,6 +139,25 @@ expectB2CApplicationEntryLinks().toEqual([
 - Immediate: generated code becomes the editing surface or a clean runner cannot produce the deployed script.
 - Long-term: source changes drift from deployment behavior and package upgrades require editing bundled internals.
 
+## Contract-B2C-003: Preserve Mobile Landing Controls (🔴 HARD)
+
+**Severity:** HARD CONSTRAINT
+
+**Why Severity:** The B2C landing host is a distinct public page. Omitting the shared compact-header modifier or allowing the hero base button rule to override the tertiary variant can make navigation or a CTA unusable on mobile without causing a build error.
+
+**Source:** Anti-Pattern-HOSTCUT-007; observed B2B/B2C consumers of the shared header and hero button styles.
+
+**Rule:** B2C MUST reuse `header-nav-container--compact` and the shared hero button variants. At mobile widths, the compact header hides the full navigation while retaining the brand and actions; hero CTAs stack vertically and fill the available width. The tertiary hero rule MUST override the hero base button rule so the discovery CTA keeps its grey fill.
+
+**Tests:**
+- Build integration: run `npm ci && npm run build` in `likened-b2c`.
+- Responsive browser smoke check: compare B2B and B2C built pages at 390 and 430 CSS-pixel widths. Verify B2C navigation is hidden, hero CTAs are full-width and vertically stacked, the tertiary CTA is grey, and neither page has horizontal overflow.
+- When computed styles disagree with source, verify the installed package version and emitted CSS; rebuild `dist/` and cache-bust the stylesheet before changing selectors.
+
+**Consequences of Violation:**
+- Immediate: mobile visitors see crowded navigation or visually incorrect hero actions.
+- Long-term: B2B/B2C responsive behavior drifts despite sharing the same CSS package.
+
 ## Contract-HOSTCUT-002: Separate Sources from Deployable Bundle (🔴 HARD)
 
 **Severity:** HARD CONSTRAINT

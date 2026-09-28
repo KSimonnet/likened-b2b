@@ -28,10 +28,8 @@ Shared sources: individual @ksimonnet/likened-shared/styles/*.css exports
 B2B source: src/css/pages/b-to-b.css */
     path: public
 ```
-
-// GOOD - emit separate shared and page-specific stylesheets under dist/.
-# GOOD - builds and publishes the self-contained artifact.
 ```yaml
+# GOOD - builds and publishes the self-contained artifact.
   sharedCssModules:
     - "@ksimonnet/likened-shared/styles"
     - "@ksimonnet/likened-shared/styles/likened-style.css"
@@ -147,6 +145,8 @@ rg 'repository: KSimonnet/' .github/workflows
 3. Configure the scoped registry before dependency installation.
 4. Verify package access with `npm view` before `npm ci`.
 
+**Publishing note:** Publishing also requires `packages: write` in the workflow and **Write** under that package's **Manage Actions access** for the publishing repository. `npm whoami` and `npm view` confirm authentication/read access only; write access granted to a different repository or package does not transfer.
+
 **Reference:**
 - Contract: [host-migration-cloudflare-redirect-contracts.md](../contracts/host-migration-cloudflare-redirect-contracts.md)
 
@@ -247,7 +247,7 @@ await esbuild.build({
 - CON-B2B-003 — Keep generated B2B CSS out of the committed source tree
 - REQ-B2C-011/012 — Keep B2C JavaScript source separate from generated bundles
 
-**Root Cause:** The initial dedicated-B2B repository commit (`4ff04d5`) included generated `public/css/b-to-b-bundle.css` and `public/css/tailwind.min.css`. Its later build copied `public/` and bundled only JavaScript, leaving both stylesheets as undeclared source prerequisites. The B2C migration repeated the pattern by copying generated landing CSS into `public/css/` rather than composing package CSS modules during the build. Earlier B2C work also copied generated JavaScript bundles into `public/js/`.
+**Root Cause:** The initial dedicated-B2B repository commit (`4ff04d5`) included generated `public/css/b-to-b-bundle.css` and `public/css/tailwind.min.css`. Its later build copied `public/` and bundled only JavaScript, leaving both stylesheets as undeclared source prerequisites. The B2C migration repeated the pattern by copying generated landing CSS into `public/css/` rather than composing package CSS modules during the build. Later, both landing CI builds failed because `src/css/tailwind.css` and `tailwind.config.js` existed locally but were untracked and therefore absent from clean GitHub Actions checkouts. Earlier B2C work also copied generated JavaScript bundles into `public/js/`.
 
 **Definition:** Keeping generated JavaScript or CSS bundles in `public/` and deploying them by copying the source tree instead of building them from editable source entry points.
 
@@ -307,7 +307,7 @@ test -f dist/css/landing-page.css
 Each repository build must fail if a generated bundle is reintroduced at its public source path.
 
 **Correction strategy:**
-1. Keep page-specific CSS under `src/css/pages/` and resolve shared styles from package CSS exports during each consumer build.
+1. Keep page-specific CSS under `src/css/pages/` and resolve shared styles from package CSS exports during each consumer build. Commit every Tailwind input/config required by that build; local untracked files are not available to CI.
 2. Keep shared CSS modules in `likened-shared`; compose them in the consumer build and generate `landing-page.css` only under that consumer's `dist/css/`.
 3. Keep B2C JavaScript entry points as source and emit their bundles only under `likened-b2c/dist/js/`.
 4. Remove generated bundles from `public/`, ignore their old paths, and upload `dist/` through Pages.
@@ -315,3 +315,29 @@ Each repository build must fail if a generated bundle is reintroduced at its pub
 **Reference:**
 - Contract: [host-migration-cloudflare-redirect-contracts.md](../contracts/host-migration-cloudflare-redirect-contracts.md)
 - Specification: [b-to-b-landing-page-specifications.md](../Specifications/b-to-b-landing-page-specifications.md)
+
+---
+
+## Anti-Pattern-HOSTCUT-007: Mobile Landing Controls Drift Between Consumers (🔴 HIGH)
+
+**Severity:** HIGH
+
+**Category:** Responsive parity — shared CSS is consumed with different page modifiers or a losing cascade rule.
+
+**Root Cause:** B2B used `header-nav-container--compact`, while B2C omitted it, so B2C displayed its full navigation on mobile. Separately, `.hero .button-link` had greater specificity than the generic `.button-link--tertiary` rule, causing the B2C discovery CTA to keep the hero's white fill. A passing build did not expose either visual regression.
+
+**Definition:** Landing consumers use the shared mobile header and hero CTA styles inconsistently, or a contextual selector overrides a generic button variant.
+
+**Why it's harmful:**
+- Mobile navigation becomes crowded even though the shared package provides a compact variant.
+- Hero CTAs lose their intended visual distinction while source declarations appear correct in isolation.
+- Build success gives false confidence because selector precedence and viewport behavior are runtime concerns.
+
+**Detection strategy:** Compare built B2B and B2C pages at 390px and 430px CSS viewport widths. Check computed nav visibility, button direction/width/background, and document overflow. Rebuild first and cache-bust CSS when a preview disagrees with source.
+
+**Correction strategy:**
+1. Apply `header-nav-container--compact` on standalone landing pages that need compact mobile navigation.
+2. Add a contextual hero modifier rule when a generic button variant is overridden by the hero base selector.
+3. Verify the built pages in a browser; do not add a bespoke regex build validator for visual behavior.
+
+**Reference:** [Contract-B2C-003](../contracts/host-migration-cloudflare-redirect-contracts.md)
