@@ -20,16 +20,18 @@ tags: ['landing-page', 'b2b', 'talent-acquisition', 'marketing']
 
 ### REQ-INF-001 — CSS bundle
 
-`b-to-b.html` and `b-to-b-pricing.html` MUST load `css/tailwind.min.css` and `css/b-to-b-bundle.css` from `dist/`. The build generates Tailwind from `src/css/tailwind.css` and `tailwind.config.js`; it generates the B2B bundle from the `src/css/b-to-b.css` entry point. That entry point imports these sources in order:
+`b-to-b.html` and `b-to-b-pricing.html` MUST load `css/tailwind.min.css`, `css/landing-page.css`, and `css/b-to-b.css` from `dist/`. The build generates Tailwind from `src/css/tailwind.css` and `tailwind.config.js`; it composes the shared landing stylesheet from package CSS exports and compiles the B2B page stylesheet from `src/css/pages/b-to-b.css`.
+
+The shared stylesheet composes these modules in order:
 
 1. `@ksimonnet/likened-shared/styles` (brand kit)
 2. `@ksimonnet/likened-shared/styles/likened-style.css`
 3. `@ksimonnet/likened-shared/styles/page-style.css`
-4. `@ksimonnet/likened-shared/styles/modal.css`
+4. `@ksimonnet/likened-shared/styles/landing-page-content.css`
 5. `@ksimonnet/likened-shared/styles/slider-switch.css`
-6. `src/css/pages/b-to-b.css`
+6. `@ksimonnet/likened-shared/styles/modal.css`
 
-The generated files MUST exist only under `dist/css/`; neither `public/css/b-to-b-bundle.css` nor `public/css/tailwind.min.css` may be committed or present in the source tree. Neither `pricing.css` nor any other page-specific stylesheet is included.
+The generated files MUST exist only under `dist/css/`; generated stylesheets MUST NOT be committed or present under `public/css/`. The B2B page stylesheet is loaded separately from the shared landing stylesheet.
 
 Before writing any new CSS class in `b-to-b.css`, the package-owned shared stack MUST be checked. If an equivalent class exists in any of the files above, it MUST be reused — not duplicated (Contract-CSS-001). All colour, shadow, spacing, and font values MUST use `var(--likened-*)` tokens (Contract-CSS-004). No `style=""` attributes and no `element.style.*` assignments for visual properties (Contract-CSS-011).
 
@@ -102,9 +104,9 @@ The action MUST read the numeric target and optional suffix from `target.dataset
 - `{ from: "public/b-to-b.html", to: "dist/b-to-b.html" }`
 - `{ from: "public/b-to-b-pricing.html", to: "dist/b-to-b-pricing.html" }`
 
-### REQ-BUILD-002 — Generate `b-to-b-bundle.css`
+### REQ-BUILD-002 — Generate shared and page-specific CSS
 
-`buildCSSBundle` MUST bundle `src/css/b-to-b.css` into `dist/css/b-to-b-bundle.css`. The build MUST fail if `public/css/b-to-b-bundle.css` exists.
+The build MUST compose package CSS exports into `dist/css/landing-page.css` and compile `src/css/pages/b-to-b.css` into `dist/css/b-to-b.css`. The build MUST fail if generated stylesheets exist under `public/css/`.
 
 ### REQ-BUILD-003 — Build `landing-page.js`
 
@@ -359,9 +361,9 @@ Source: `docs/references/b-to-c-commercials.md # Pricing Model`.
 
 The `<main>` MUST open with an `<h1>`: **"Executive-search-grade talent intelligence. Transparent pricing."** and a subtitle: **"From longlist to full outreach campaign — choose the scope that fits your mandate."**
 
-### REQ-BTP-003 — Loads `b-to-b-bundle.css`
+### REQ-BTP-003 — Loads shared and B2B page styles
 
-`b-to-b-pricing.html` MUST load `css/b-to-b-bundle.css` (not `landing-page-bundle.css` or `pricing-bundle.css`).
+`b-to-b-pricing.html` MUST load `css/landing-page.css` and `css/b-to-b.css` separately.
 
 ### REQ-BTP-004 — Three service tiers
 

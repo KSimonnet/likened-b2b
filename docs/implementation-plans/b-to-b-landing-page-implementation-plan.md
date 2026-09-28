@@ -36,7 +36,7 @@ New BtoB public-facing entry point converting Talent Acquisition professionals i
 
 | Decision | Detail |
 |---|---|
-| CSS bundle | `dist/css/b-to-b-bundle.css` = package brand kit + package shared styles + `src/css/pages/b-to-b.css` |
+| CSS artifacts | `dist/css/landing-page.css` = composed package modules; `dist/css/b-to-b.css` = `src/css/pages/b-to-b.css` |
 | CTA behavior | Product-entry CTAs use "Sign In" → `app/#/dashboard`; Section 8 discovery CTA uses "Contact Us" → `https://forms.gle/p67EoZcdRRpGnTfZA`; reciprocal redirect uses "Learn more →" → `../index.html` |
 | Stat counter | Implemented once as `AnimationManager.actions.animateStatCounter`; landing entry points own only observer orchestration |
 | Stats 1 & 2 | Animated via `data-target` + `data-suffix="%"` + IntersectionObserver (threshold 0.3, once) |
@@ -60,7 +60,7 @@ New BtoB public-facing entry point converting Talent Acquisition professionals i
 │                                  │                                                                                                │ REQ-BTB-001–085, REQ-BTP-001–009                            │
 ├──────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────┤
 │ Ubiquitous Language          │ [b-to-b-landing-page-feature-brief.md](../feature-briefs/b-to-b-landing-page-feature-brief.md)            │ TAP, Longlist, mandate, service tier, Trusted Advisor,      │
-│                                  │                                                                                                │ discovery call, b-to-b-bundle.css, Term Collision Register  │
+│                                  │                                                                                                │ discovery call, separate CSS artifacts, Term Collision Register │
 ├──────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────┤
 │ Commercial Reference             │ [b-to-b-commercials.md](../references/landing-page.md)                                   │ Elevator pitch, offering pillars, differentiators, Intel Qs │
 ├──────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────┤
@@ -77,7 +77,7 @@ Write all failing tests before writing source code. Each test MUST fail (RED) be
 
 - [x] **[Test]** `utils/web/classes/tests/animation-manager.test.js` — action reaches `data-target`, respects `data-suffix` and `duration_ms`, and ignores invalid targets — **Spec:** REQ-JS-001
 - [x] **[Test]** consumer build checks — landing entry points bundle calls to `AnimationManager.actions.animateStatCounter` without local helper modules — **Spec:** REQ-JS-002, REQ-JS-003
-- [ ] **[Test]** `tests/build/b-to-b-build.test.js` — build verification: after `npm run build`, `dist/b-to-b.html`, `dist/b-to-b-pricing.html`, `dist/css/b-to-b-bundle.css`, `dist/js/landing-page.js` all exist — **Spec:** REQ-BUILD-001, REQ-BUILD-002, REQ-BUILD-003
+- [ ] **[Test]** `tests/build/b-to-b-build.test.js` — build verification: after `npm run build`, `dist/b-to-b.html`, `dist/b-to-b-pricing.html`, `dist/css/landing-page.css`, `dist/css/b-to-b.css`, and `dist/js/landing-page.js` all exist — **Spec:** REQ-BUILD-001, REQ-BUILD-002, REQ-BUILD-003
 - [ ] **[Test]** `tests/acceptance/b-to-b-page-structure.test.js` — structural acceptance: `b-to-b.html` contains the 9 required sections (headings match spec exactly), CTA/link destinations match spec, `dark-mode.js` is in `<head>` — **Spec:** REQ-BTB-001–085, REQ-INF-002, REQ-INF-003
 - [ ] **[Test]** `tests/acceptance/b-to-b-pricing-page-structure.test.js` — structural acceptance: `b-to-b-pricing.html` contains 3 tier cards, no billing toggle, guarantee callout block plus reciprocal B2C callout block present with "Learn more →" link to `../pricing.html` — **Spec:** REQ-BTP-001–009
 - [ ] Run `npm test` — confirm all new tests are RED
@@ -104,7 +104,7 @@ Write all failing tests before writing source code. Each test MUST fail (RED) be
 **Prerequisite:** IP-1 GREEN.
 
 - [ ] Open `scripts/build.js` — add two entries to `copyPublicFiles`: `b-to-b.html` and `b-to-b-pricing.html` — **Spec:** REQ-BUILD-001
-- [ ] Add `b-to-b-bundle.css` entry to `prepareCSS` using `@ksimonnet/likened-shared` CSS exports followed by B2B page CSS — **Spec:** REQ-BUILD-002
+- [ ] Compose the shared package CSS exports and compile `src/css/pages/b-to-b.css` into separate `dist/css/` artifacts — **Spec:** REQ-BUILD-002
 - [ ] Add `landing-page.js` entry to `buildJS` (`iife` format, same config as `landing-page.js`) — **Spec:** REQ-BUILD-003
 - [ ] Run `npm run build` — must complete without errors (placeholder empty files for HTML/CSS/JS are sufficient to pass the build at this stage)
 - [ ] Run `npm test` — `b-to-b-build.test.js` turns GREEN
@@ -126,11 +126,11 @@ Write all failing tests before writing source code. Each test MUST fail (RED) be
 
 - [ ] Create `src/css/pages/b-to-b.css` — add only classes not already present in `@ksimonnet/likened-shared` CSS exports; use `var(--likened-*)` tokens throughout; no `style=""` attributes — **Spec:** REQ-INF-001 (CSS-001, CSS-004, CSS-011)
 - [ ] Required layout classes to define:
-  - `.b2b-stats-hook-grid` — 3-column stats grid (mirrors BtoC stats hook; check `@ksimonnet/likened-shared/styles/landing-page.css` first)
+  - `.b2b-stats-hook-grid` — 3-column stats grid (mirrors BtoC stats hook; check `@ksimonnet/likened-shared/styles/page-style.css` and `landing-page-content.css` first)
   - `.b2b-differentiator-grid` — 6-item 2–3-column grid (Key Differentiators section)
   - Reuse package-owned `.cta-callout` and `.reciprocal-redirect`; do not redefine them locally
   - Any hero copy sizing overrides specific to BtoB hero
-- [ ] Run `npm run build` — verify `dist/css/b-to-b-bundle.css` is produced
+- [ ] Run `npm run build` — verify `dist/css/landing-page.css` and `dist/css/b-to-b.css` are produced
 
 > **Review gate:** Pause for user review before Phase IP-4.
 
@@ -144,7 +144,7 @@ Build each section in spec order. After each section, open the file in a browser
 
 #### IP-4a: Page shell
 
-- [ ] Create `public/b-to-b.html` — copy the head, nav, and footer shell from `index.html`; replace the CSS bundle link with `css/b-to-b-bundle.css`; replace the JS script with `./js/landing-page.js`; set `<title>` to "Likened for Talent Acquisition — Network Science-Powered Talent Mapping" — **Spec:** REQ-BTB-001, REQ-BTB-002, REQ-INF-002, REQ-INF-005, REQ-INF-006
+- [ ] Create `public/b-to-b.html` — copy the head, nav, and footer shell from `index.html`; load `css/landing-page.css` and `css/b-to-b.css`; replace the JS script with `./js/landing-page.js`; set `<title>` to "Likened for Talent Acquisition — Network Science-Powered Talent Mapping" — **Spec:** REQ-BTB-001, REQ-BTB-002, REQ-INF-002, REQ-INF-005, REQ-INF-006
 - [ ] Nav: "Sign In" → `../app/#/dashboard`; "Pricing" → `pricing.html`; no standalone "For Individuals" link — **Spec:** REQ-INF-006
 
 #### IP-4b: Section 1 — Hero / Mission
@@ -215,7 +215,7 @@ Build each section in spec order. After each section, open the file in a browser
 
 **Prerequisite:** IP-4 GREEN.
 
-- [ ] Create `public/b-to-b-pricing.html` — page shell (head, nav, footer) mirroring `b-to-b.html`; load `css/b-to-b-bundle.css` — **Spec:** REQ-BTP-003
+- [ ] Create `public/b-to-b-pricing.html` — page shell (head, nav, footer) mirroring `b-to-b.html`; load `css/landing-page.css` and `css/b-to-b.css` — **Spec:** REQ-BTP-003
 - [ ] `<title>`: "Likened for TA Teams — Pricing" — **Spec:** REQ-BTP-001
 - [ ] `<h1>`: "Executive-search-grade talent intelligence. Transparent pricing." + subtitle — **Spec:** REQ-BTP-002
 - [ ] 3 service tier cards in `pricing-tiers-grid` layout:
@@ -263,7 +263,7 @@ Build each section in spec order. After each section, open the file in a browser
 
 - ✅ `@ksimonnet/likened-shared/styles` — design tokens, colours, typography
 - ✅ `@ksimonnet/likened-shared/styles/page-style.css` — base layout classes (`section-split`, `hero`, etc.)
-- ✅ `@ksimonnet/likened-shared/styles/landing-page.css` — composed landing entrypoint and layout classes
+- ✅ `@ksimonnet/likened-shared` CSS source exports — composed by consumer build scripts
 - ✅ `@ksimonnet/likened-shared/styles/slider-switch.css` — dark mode toggle component
 - ✅ `@ksimonnet/likened-shared/styles/modal.css` — modal base styles
 - ✅ `public/js/dark-mode.js` — dark mode script (reused as-is)
@@ -294,11 +294,11 @@ Build each section in spec order. After each section, open the file in a browser
 │ CSS class duplicated from shared stack into `b-to-b.css`            │ 🟡 Medium │ 🟡 Medium   │ Audit shared CSS before writing new classes in IP-3b │
 │ (violates CSS-001 / DRY)                                            │           │             │                                                     │
 ├─────────────────────────────────────────────────────────────────────┼───────────┼─────────────┼─────────────────────────────────────────────────────┤
-│ `b-to-b-bundle.css` bundle order wrong — styles override            │ 🟡 Medium │ 🟢 Low      │ Mirror exact order from REQ-INF-001; verify in build │
+│ Shared/page stylesheet order wrong — styles override               │ 🟡 Medium │ 🟢 Low      │ Mirror exact order from REQ-INF-001; verify in build │
 │ unintentionally                                                     │           │             │                                                     │
 ├─────────────────────────────────────────────────────────────────────┼───────────┼─────────────┼─────────────────────────────────────────────────────┤
 │ BtoB pricing page `pricing-tiers-grid` class missing from CSS       │ 🟡 Medium │ 🟡 Medium   │ Check `pricing.html` + `pricing.css` for existing    │
-│ bundle (not included in b-to-b-bundle.css)                         │           │             │ `.pricing-tiers-grid` before assuming it exists      │
+│ shared stylesheet (not included in package modules)                │           │             │ `.pricing-tiers-grid` before assuming it exists      │
 ├─────────────────────────────────────────────────────────────────────┼───────────┼─────────────┼─────────────────────────────────────────────────────┤
 │ Published package version is not installed by consumers            │ 🔴 High   │ 🟡 Medium   │ Publish `2.1.0`, update consumer lockfiles, then run │
 │                                                                     │           │             │ clean builds before deployment                       │
@@ -331,7 +331,7 @@ Build each section in spec order. After each section, open the file in a browser
 
 ### Build
 - [ ] `npm run build` completes without errors
-- [ ] `dist/b-to-b.html`, `dist/b-to-b-pricing.html`, `dist/css/b-to-b-bundle.css`, `dist/js/landing-page.js` all exist after build
+- [ ] `dist/b-to-b.html`, `dist/b-to-b-pricing.html`, `dist/css/landing-page.css`, `dist/css/b-to-b.css`, and `dist/js/landing-page.js` all exist after build
 
 ### Regression
 - [ ] `npm test` — full suite GREEN (existing BtoC tests unaffected)

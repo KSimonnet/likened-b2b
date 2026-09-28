@@ -23,17 +23,25 @@ Trigger justification: Contracts B2C-001 and B2C-002 and constraints CON-B2C-003
 **Code examples:**
 
 ```yaml
-# BAD - ships raw source with unresolved imports.
-- uses: actions/upload-pages-artifact@v3
-  with:
+# GOOD - shared modules and page-specific styles remain separate sources.
+Shared sources: individual @ksimonnet/likened-shared/styles/*.css exports
+B2B source: src/css/pages/b-to-b.css */
     path: public
 ```
 
-```yaml
+// GOOD - emit separate shared and page-specific stylesheets under dist/.
 # GOOD - builds and publishes the self-contained artifact.
-- run: npm run build
+```yaml
+  sharedCssModules:
+    - "@ksimonnet/likened-shared/styles"
+    - "@ksimonnet/likened-shared/styles/likened-style.css"
+    - "@ksimonnet/likened-shared/styles/page-style.css"
+    - "@ksimonnet/likened-shared/styles/landing-page-content.css"
+    - "@ksimonnet/likened-shared/styles/slider-switch.css"
+    - "@ksimonnet/likened-shared/styles/modal.css"
+  pageCss: "src/css/pages/b-to-b.css"
 - uses: actions/upload-pages-artifact@v3
-  with:
+  outdir: "dist/css"
     path: dist
 ```
 
@@ -48,160 +56,6 @@ rg '^import ' dist/js
 2. Run the build before the Pages upload step.
 3. Upload `dist/` only.
 4. Verify the browser console and deployed script response after deployment.
-
-**Reference:**
-- Contract: [host-migration-cloudflare-redirect-contracts.md](../contracts/host-migration-cloudflare-redirect-contracts.md)
-
-## Anti-Pattern-HOSTCUT-006: Committing a Generated Bundle as Public Source (🔴 CRITICAL)
-
-**Severity:** CRITICAL
-
-**Category:** Source/Artifact Ownership
-
-**Violates:**
-- Contract-HOSTCUT-002 — Separate Sources from Deployable Bundles
-- REQ-B2B-004 — Generate deployable B2B CSS under `dist/`
-- CON-B2B-003 — Keep generated B2B CSS out of the committed source tree
-- REQ-B2C-011/012 — Keep B2C JavaScript source separate from generated bundles
-
-**Root Cause:** The initial dedicated-B2B repository commit (`4ff04d5`) included generated `public/css/b-to-b-bundle.css` and `public/css/tailwind.min.css`. Its later build copied `public/` and bundled only JavaScript, leaving both stylesheets as undeclared source prerequisites. The B2C migration repeated the pattern by copying the generated landing bundle into `public/css/` rather than building from the package-owned `landing-page.css` entry point. Earlier B2C work also copied generated JavaScript bundles into `public/js/`.
-
-**Definition:** Keeping generated JavaScript or CSS bundles in `public/` and deploying them by copying the source tree instead of building them from editable source entry points.
-
-**Why it's harmful:** The standalone deployment depends on opaque generated output, source changes can drift from deployed behavior, shared styles can diverge, and a clean build cannot prove that the delivered bundle was produced from maintainable inputs.
-
-**Code examples:**
-
-```text
-# BAD - generated output is committed as public source.
-public/css/b-to-b-bundle.css
-public/css/tailwind.min.css
-public/css/landing-page-bundle.css
-public/js/landing-page.js  # generated IIFE replacing the maintained source module
-```
-
-```css
-/* GOOD - maintain the B2C landing stylesheet source, not its generated bundle. */
-/* Source entry point: likened-shared/src/css/landing-page.css */
-```
-
-```javascript
-// GOOD - emit CSS bundles under dist/ from maintained entry points.
-await esbuild.build({
-  entryPoints: ["src/css/b-to-b.css"],
-  bundle: true,
-  outfile: "dist/css/b-to-b-bundle.css"
-});
-```
-
-**Detection strategy:**
-
-```bash
-cd ../likened-b2b
-test ! -e public/css/b-to-b-bundle.css
-test ! -e public/css/tailwind.min.css
-test -f dist/css/b-to-b-bundle.css
-test -f dist/css/tailwind.min.css
-
-cd ../likened-b2c
-test ! -e public/css/landing-page.css
-test ! -e public/css/landing-page-bundle.css
-test -f dist/css/landing-page.css
-! rg -q '^\(\(\) => \{' public/js/landing-page.js public/js/pricing.js
-```
-
-Each repository build must fail if a generated bundle is reintroduced at its public source path.
-
-**Correction strategy:**
-1. Keep the B2B CSS entry points under `src/css/` and resolve shared styles from declared packages or maintained local source modules.
-2. Keep `likened-shared/src/css/landing-page.css` as the sole B2C landing CSS source entry point; generate `landing-page.css` only in `likened-b2c/dist/css/`.
-3. Keep B2C JavaScript entry points as source and emit their bundles only under `likened-b2c/dist/js/`.
-4. Remove generated bundles from `public/`, ignore their old paths, and upload `dist/` through Pages.
-
-**Reference:**
-- Contract: [host-migration-cloudflare-redirect-contracts.md](../contracts/host-migration-cloudflare-redirect-contracts.md)
-- Specification: [b-to-b-landing-page-specifications.md](../Specifications/b-to-b-landing-page-specifications.md)
-
-
-## Anti-Pattern-HOSTCUT-004: Committing a Generated Bundle as the Source Entry Point (🔴 CRITICAL)
-
-**Severity:** CRITICAL
-
-**Category:** Source/Artifact Ownership
-
-**Violates:**
-- Contract-B2C-002 — Separate B2C Source from Browser Artifacts
-- Requirement REQ-B2C-011 — Preserve an editable source entry point
-- Requirement REQ-B2C-012 — Generate the browser bundle under `dist/`
-- Constraint CON-B2C-006 — Keep source and generated artifacts separate
-
-**Root Cause:** The migration copied generated `dist/js/` bundles into `public/js/` (first `landing-page.js`, then `pricing.js`) to make the standalone host executable without migrating its source dependencies and build step.
-
-**Definition:** Storing bundler runtime, inlined dependencies, and application code in the canonical `public/js/` entrypoint instead of generating that code into `dist/js/`.
-
-**Why it's harmful:** Developers must edit generated internals, source imports disappear, dependency ownership becomes opaque, and a later build cannot prove that the deployed script came from maintainable source.
-
-**Code examples:**
-
-```javascript
-// BAD - generated IIFE committed as public source.
-(() => {
-  var __defProp = Object.defineProperty;
-  // thousands of lines of inlined dependencies
-})();
-```
-
-```javascript
-// GOOD - source entry point under public/js.
-import { AnimationManager } from "@ksimonnet/utils/web/classes/modules/animation-manager.js";
-```
-
-```javascript
-// GOOD - build emits every browser artifact under dist/js.
-await esbuild.build({
-  entryPoints: ["public/js/landing-page.js", "public/js/pricing.js"],
-  bundle: true,
-  format: "iife",
-  outdir: "dist/js"
-});
-```
-
-**Detection strategy:** No source entry point may begin with generated bundler runtime or inline `node_modules` code; each built artifact must contain no unresolved static imports. An entry point without dependencies legitimately has no imports, so import presence is not a source signal.
-
-**Correction strategy:**
-1. Restore the unbundled entrypoints and every repository-owned local dependency.
-2. Declare package and bundler dependencies in `package.json` and the lockfile.
-3. Bundle each entry point into its `dist/js/` counterpart during `npm run build`.
-4. Run the build from a clean checkout after `npm ci`.
-
-**Reference:**
-- Contract: [host-migration-cloudflare-redirect-contracts.md](../contracts/host-migration-cloudflare-redirect-contracts.md)
-
-## Anti-Pattern-HOSTCUT-005: Duplicating a Package-Owned Stat-Counter Action (🔴 CRITICAL)
-
-**Severity:** CRITICAL
-
-**Category:** Shared Package Ownership
-
-**Violates:**
-- Contract-HOSTCUT-001 — Use the Package-Owned Stat-Counter Action
-- Requirements REQ-B2B-003 and REQ-B2C-014 — Use the supported shared action
-- Constraints CON-B2B-002 and CON-B2C-007 — Do not define consumer-local copies
-
-**Root Cause:** The webapp and landing repositories each carried a separate `animateStatCounter` helper, so behavior and fixes could drift between consumers.
-
-**Definition:** Defining or importing a consumer-local `animateStatCounter` implementation after the behavior is provided by `AnimationManager.actions.animateStatCounter` in `@ksimonnet/utils`.
-
-**Why it's harmful:** A fix to the counter algorithm must otherwise be repeated across repositories, while consumers can silently diverge in suffix formatting, duration, or edge-case handling.
-
-**Detection strategy:** Search consumer source for local function definitions and helper files; verify B2B and B2C dependency manifests and lockfiles resolve `@ksimonnet/utils` 2.1.0 or later.
-
-**Correction strategy:**
-1. Implement the behavior once in `AnimationManager.actions`.
-2. Bump the utility package using the package release process.
-3. Update and lock each consumer dependency to the published version.
-4. Replace local calls with `AnimationManager.actions.animateStatCounter` and remove duplicate modules.
-5. Run package tests and clean consumer builds.
 
 **Reference:**
 - Contract: [host-migration-cloudflare-redirect-contracts.md](../contracts/host-migration-cloudflare-redirect-contracts.md)
@@ -295,3 +149,169 @@ rg 'repository: KSimonnet/' .github/workflows
 
 **Reference:**
 - Contract: [host-migration-cloudflare-redirect-contracts.md](../contracts/host-migration-cloudflare-redirect-contracts.md)
+
+
+## Anti-Pattern-HOSTCUT-004: Committing a Generated Bundle as the Source Entry Point (🔴 CRITICAL)
+
+**Severity:** CRITICAL
+
+**Category:** Source/Artifact Ownership
+
+**Violates:**
+- Contract-B2C-002 — Separate B2C Source from Browser Artifacts
+- Requirement REQ-B2C-011 — Preserve an editable source entry point
+- Requirement REQ-B2C-012 — Generate the browser bundle under `dist/`
+- Constraint CON-B2C-006 — Keep source and generated artifacts separate
+
+**Root Cause:** The migration copied generated `dist/js/` bundles into `public/js/` (first `landing-page.js`, then `pricing.js`) to make the standalone host executable without migrating its source dependencies and build step.
+
+**Definition:** Storing bundler runtime, inlined dependencies, and application code in the canonical `public/js/` entrypoint instead of generating that code into `dist/js/`.
+
+**Why it's harmful:** Developers must edit generated internals, source imports disappear, dependency ownership becomes opaque, and a later build cannot prove that the deployed script came from maintainable source.
+
+**Code examples:**
+
+```javascript
+// BAD - generated IIFE committed as public source.
+(() => {
+  var __defProp = Object.defineProperty;
+  // thousands of lines of inlined dependencies
+})();
+```
+
+```javascript
+// GOOD - source entry point under public/js.
+import { AnimationManager } from "@ksimonnet/utils/web/classes/modules/animation-manager.js";
+```
+
+```javascript
+// GOOD - build emits every browser artifact under dist/js.
+await esbuild.build({
+  entryPoints: ["public/js/landing-page.js", "public/js/pricing.js"],
+  bundle: true,
+  format: "iife",
+  outdir: "dist/js"
+});
+```
+
+**Detection strategy:** No source entry point may begin with generated bundler runtime or inline `node_modules` code; each built artifact must contain no unresolved static imports. An entry point without dependencies legitimately has no imports, so import presence is not a source signal.
+
+**Correction strategy:**
+1. Restore the unbundled entrypoints and every repository-owned local dependency.
+2. Declare package and bundler dependencies in `package.json` and the lockfile.
+3. Bundle each entry point into its `dist/js/` counterpart during `npm run build`.
+4. Run the build from a clean checkout after `npm ci`.
+
+**Reference:**
+- Contract: [host-migration-cloudflare-redirect-contracts.md](../contracts/host-migration-cloudflare-redirect-contracts.md)
+
+## Anti-Pattern-HOSTCUT-005: Duplicating a Package-Owned Stat-Counter Action (🔴 CRITICAL)
+
+**Severity:** CRITICAL
+
+**Category:** Shared Package Ownership
+
+**Violates:**
+- Contract-HOSTCUT-001 — Use the Package-Owned Stat-Counter Action
+- Requirements REQ-B2B-003 and REQ-B2C-014 — Use the supported shared action
+- Constraints CON-B2B-002 and CON-B2C-007 — Do not define consumer-local copies
+
+**Root Cause:** The webapp and landing repositories each carried a separate `animateStatCounter` helper, so behavior and fixes could drift between consumers.
+
+**Definition:** Defining or importing a consumer-local `animateStatCounter` implementation after the behavior is provided by `AnimationManager.actions.animateStatCounter` in `@ksimonnet/utils`.
+
+**Why it's harmful:** A fix to the counter algorithm must otherwise be repeated across repositories, while consumers can silently diverge in suffix formatting, duration, or edge-case handling.
+
+**Detection strategy:** Search consumer source for local function definitions and helper files; verify B2B and B2C dependency manifests and lockfiles resolve `@ksimonnet/utils` 2.1.0 or later.
+
+**Correction strategy:**
+1. Implement the behavior once in `AnimationManager.actions`.
+2. Bump the utility package using the package release process.
+3. Update and lock each consumer dependency to the published version.
+4. Replace local calls with `AnimationManager.actions.animateStatCounter` and remove duplicate modules.
+5. Run package tests and clean consumer builds.
+
+**Reference:**
+- Contract: [host-migration-cloudflare-redirect-contracts.md](../contracts/host-migration-cloudflare-redirect-contracts.md)
+
+
+## Anti-Pattern-HOSTCUT-006: Committing a Generated Bundle as Public Source (🔴 CRITICAL)
+
+**Severity:** CRITICAL
+
+**Category:** Source/Artifact Ownership
+
+**Violates:**
+- Contract-HOSTCUT-002 — Separate Sources from Deployable Bundles
+- REQ-B2B-004 — Generate deployable B2B CSS under `dist/`
+- CON-B2B-003 — Keep generated B2B CSS out of the committed source tree
+- REQ-B2C-011/012 — Keep B2C JavaScript source separate from generated bundles
+
+**Root Cause:** The initial dedicated-B2B repository commit (`4ff04d5`) included generated `public/css/b-to-b-bundle.css` and `public/css/tailwind.min.css`. Its later build copied `public/` and bundled only JavaScript, leaving both stylesheets as undeclared source prerequisites. The B2C migration repeated the pattern by copying generated landing CSS into `public/css/` rather than composing package CSS modules during the build. Earlier B2C work also copied generated JavaScript bundles into `public/js/`.
+
+**Definition:** Keeping generated JavaScript or CSS bundles in `public/` and deploying them by copying the source tree instead of building them from editable source entry points.
+
+**Why it's harmful:** The standalone deployment depends on opaque generated output, source changes can drift from deployed behavior, shared styles can diverge, and a clean build cannot prove that the delivered bundle was produced from maintainable inputs.
+
+**Code examples:**
+
+```text
+# BAD - generated output is committed as public source.
+public/css/b-to-b-bundle.css
+public/css/tailwind.min.css
+public/css/landing-page-bundle.css
+public/js/landing-page.js  # generated IIFE replacing the maintained source module
+```
+
+```css
+/* GOOD - maintain package CSS modules and compose them in each consumer build. */
+```
+
+```javascript
+// GOOD - emit separate shared and page-specific CSS under dist/ from maintained sources.
+await esbuild.build({
+  stdin: {
+    contents: shared_css_modules.map((module_path) => `@import "${module_path}";`).join("\n"),
+    resolveDir: process.cwd(),
+    loader: "css"
+  },
+  bundle: true,
+  outfile: "dist/css/landing-page.css"
+});
+await esbuild.build({
+  entryPoints: ["src/css/pages/b-to-b.css"],
+  bundle: true,
+  outfile: "dist/css/b-to-b.css"
+});
+```
+
+**Detection strategy:**
+
+```bash
+cd ../likened-b2b
+test ! -e public/css/b-to-b-bundle.css
+test ! -e public/css/tailwind.min.css
+test ! -e public/css/landing-page.css
+test ! -e public/css/b-to-b.css
+test -f dist/css/landing-page.css
+test -f dist/css/b-to-b.css
+test -f dist/css/tailwind.min.css
+
+cd ../likened-b2c
+test ! -e public/css/landing-page.css
+test ! -e public/css/landing-page-bundle.css
+test -f dist/css/landing-page.css
+! rg -q '^\(\(\) => \{' public/js/landing-page.js public/js/pricing.js
+```
+
+Each repository build must fail if a generated bundle is reintroduced at its public source path.
+
+**Correction strategy:**
+1. Keep page-specific CSS under `src/css/pages/` and resolve shared styles from package CSS exports during each consumer build.
+2. Keep shared CSS modules in `likened-shared`; compose them in the consumer build and generate `landing-page.css` only under that consumer's `dist/css/`.
+3. Keep B2C JavaScript entry points as source and emit their bundles only under `likened-b2c/dist/js/`.
+4. Remove generated bundles from `public/`, ignore their old paths, and upload `dist/` through Pages.
+
+**Reference:**
+- Contract: [host-migration-cloudflare-redirect-contracts.md](../contracts/host-migration-cloudflare-redirect-contracts.md)
+- Specification: [b-to-b-landing-page-specifications.md](../Specifications/b-to-b-landing-page-specifications.md)

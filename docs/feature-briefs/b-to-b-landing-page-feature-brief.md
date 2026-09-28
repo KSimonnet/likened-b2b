@@ -21,15 +21,15 @@ Likened has no public-facing entry point for its enterprise / Talent Acquisition
 - `public/js/landing-page.js` — new file; invokes `AnimationManager.actions.animateStatCounter`
 - `@ksimonnet/utils/web/classes/modules/animation-manager.js` — owns the reusable stat-counter action
 - `public/js/landing-page.js` — retains page-specific observer orchestration and invokes the package action
-- `src/css/b-to-b.css` and `src/css/{shared,pages}/` — editable CSS entry point and source modules for the standalone B2B build
+- `src/css/pages/b-to-b.css` — editable B2B-only styles, composed with shared package modules by the build
 - `src/css/tailwind.css` and `tailwind.config.js` — editable Tailwind input and local HTML/JavaScript content scan
-- `scripts/build.js` — copies the BtoB HTML files, generates `dist/css/tailwind.min.css` and `dist/css/b-to-b-bundle.css`, and builds `landing-page.js`
+- `scripts/build.js` — copies the BtoB HTML files, generates separate shared, B2B page, and Tailwind stylesheets under `dist/css/`, and builds `landing-page.js`
 
 **Unchanged:**
 - `public/index.html` content and sections
 - `public/pricing.html` — untouched (BtoC pricing page)
 - `public/app/` — untouched
-- `@ksimonnet/likened-shared/styles/landing-page.css` — canonical shared landing styles consumed through the generated CSS bundle
+- `@ksimonnet/likened-shared` CSS exports — canonical shared CSS modules composed by consumer build scripts
 - `public/js/dark-mode.js` — reused as-is in `b-to-b.html`
 - All existing image assets — some are reused; no new images are required for MVP
 
@@ -58,7 +58,7 @@ Likened has no public-facing entry point for its enterprise / Talent Acquisition
 
 - **Tech stack stays vanilla** — HTML / CSS / JS + TailwindCSS. No framework (React, Vue, etc.) introduced.
 - **`b-to-b.html` is a new standalone file** — mirrors the HTML skeleton of `index.html` (shared header, footer, dark-mode toggle, `tailwind.min.css`, CSS bundle); content and copy are entirely BtoB.
-- **CSS bundles**: `dist/css/tailwind.min.css` is generated from the local Tailwind input/config. `dist/css/b-to-b-bundle.css` is generated from `src/css/b-to-b.css`, which imports the package-owned brand kit, shared CSS source modules, and B2B page overrides. Neither generated bundle is committed under `public/css/`.
+- **CSS artifacts**: `dist/css/tailwind.min.css` is generated from the local Tailwind input/config. `dist/css/landing-page.css` is composed from package CSS exports; `dist/css/b-to-b.css` is generated from `src/css/pages/b-to-b.css`. Generated stylesheets are never committed under `public/css/`.
 - **Stat-counter animation is an `AnimationManager` action** — `AnimationManager.actions.animateStatCounter` is the single implementation in `@ksimonnet/utils`; B2B and B2C entry points own only their IntersectionObserver orchestration. This resolves the cross-repository DRY violation.
 - **BtoB stats are presented without external source citations** — statistics are first-party industry analysis; no hyperlinks are added (no external source available).
 - **CTA model is purpose-split** — product-entry CTAs use "Sign In" and route to `app/#/dashboard`; the Section 8 discovery CTA uses "Contact Us" and routes to `https://forms.gle/p67EoZcdRRpGnTfZA`; Section 9 reciprocal redirect remains link-only and routes to B2C landing.

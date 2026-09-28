@@ -40,8 +40,9 @@ This plan changes B2B build ownership, GitHub Pages deployment, static routing, 
 - `../likened-b2b/public/index.html` — use absolute webapp targets for application entry links.
 - `../likened-b2b/public/js/landing-page.js` — import only browser-resolvable local modules that the B2B build bundles.
 - `../likened-b2b/src/css/tailwind.css` and `../likened-b2b/tailwind.config.js` — editable Tailwind source and utility scanning configuration.
-- `../likened-b2b/src/css/b-to-b.css` and `../likened-b2b/src/css/{shared,pages}/` — editable B2B CSS entry point and source modules.
-- `../likened-b2b/dist/css/tailwind.min.css` and `../likened-b2b/dist/css/b-to-b-bundle.css` — generated CSS artifacts; never commit them under `public/css/`.
+- `../likened-shared/src/css/{shared,pages}/` — canonical shared CSS modules composed by each consumer build.
+- `../likened-b2b/src/css/pages/b-to-b.css` — B2B-only page styles; `src/css/tailwind.css` and `tailwind.config.js` provide utility CSS inputs.
+- `../likened-b2b/dist/css/landing-page.css`, `b-to-b.css`, and `tailwind.min.css` — generated artifacts; never commit them under `public/css/`.
 - `scripts/build.js` — retain only apex, B2C, and legacy B2B compatibility routing.
 - `public/routing/apex-to-b2b-redirect.html` — static apex redirect document to canonical B2B host.
 - `public/routing/legacy-b-to-b-to-b2b-redirect.html` — compatibility redirect for legacy B2B root path.
@@ -146,7 +147,7 @@ Machine task table:
 - **PHASE-HOSTCUT-003 Goal:** Establish the B2B repository build and deploy it as an independent GitHub Pages site.
 - **Preconditions:** The B2B source and assets are present in `likened-b2b`; GitHub Pages is configured to use GitHub Actions.
 - **Completion Criteria:** `likened-b2b` builds a self-contained `dist/` artifact, generates CSS from its editable source entry point, deploys it with GitHub Actions, and B2B CTA links reach the unchanged webapp host.
-- **Verification Commands:** `npm run build`; `test ! -e public/css/b-to-b-bundle.css && test -f dist/css/b-to-b-bundle.css`; `rg "https://likened\.net/app/#/dashboard" public/index.html`; GitHub Actions Pages deployment status.
+- **Verification Commands:** `npm run build`; `test ! -e public/css/b-to-b.css && test -f dist/css/landing-page.css && test -f dist/css/b-to-b.css`; `rg "https://likened\.net/app/#/dashboard" public/index.html`; GitHub Actions Pages deployment status.
 
 Human checklist:
 
@@ -155,7 +156,7 @@ Human checklist:
 | TASK-HOSTCUT-005 | Add B2B esbuild build inputs and local module dependencies | [x] | 2026-09-21 |
 | TASK-HOSTCUT-006 | Add B2B GitHub Actions Pages workflow and custom-domain deployment | [x] | 2026-09-21 |
 | TASK-HOSTCUT-007 | Validate deployed B2B links to the unchanged webapp application route | [x] | 2026-09-21 |
-| TASK-HOSTCUT-016 | Restore B2B CSS source/artifact separation and generate both CSS files under `dist/` | [x] | 2026-09-28 |
+| TASK-HOSTCUT-016 | Restore B2B CSS source/artifact separation and generate stylesheets under `dist/` | [x] | 2026-09-28 |
 
 Machine task table:
 
@@ -164,7 +165,7 @@ Machine task table:
 | TASK-HOSTCUT-005 | Add B2B esbuild entry configuration and include imported helper modules in the B2B source tree | ../likened-b2b/package.json; ../likened-b2b/scripts/build.js; ../likened-b2b/public/js | build | update | TASK-HOSTCUT-004 | REQ-B2B-001 | completed | null | npm run build && ! rg "^import " dist/js/landing-page.js | Build exits 0 and `dist/js/landing-page.js` contains no unresolved browser imports | Restore standalone static-copy build and local helper layout |
 | TASK-HOSTCUT-006 | Deploy B2B `dist/` through GitHub Actions Pages with `b2b.likened.net` as its custom domain | ../likened-b2b/.github/workflows/deploy-pages.yml; ../likened-b2b/CNAME | GitHub Pages workflow | create | TASK-HOSTCUT-005 | REQ-B2B-001 | completed | null | GitHub Actions deployment status and `curl -sS -o /dev/null -w "%{http_code}" https://b2b.likened.net/` | Pages deployment succeeds and B2B returns HTTP 200 | Disable workflow and restore previous Pages source |
 | TASK-HOSTCUT-007 | Convert B2B application-entry links to the preserved webapp URL and validate production navigation | ../likened-b2b/public/index.html; ../likened-b2b/public/pricing.html | application-entry anchors | update | TASK-HOSTCUT-006 | REQ-B2B-002, CON-B2B-001 | completed | null | rg "https://likened\.net/app/#/dashboard" public/index.html public/pricing.html | Every application-entry link opens the existing webapp | Restore prior link targets |
-| TASK-HOSTCUT-016 | Generate B2B Tailwind and page CSS from local sources and reject public bundles | ../likened-b2b/scripts/build.js; ../likened-b2b/src/css; ../likened-b2b/tailwind.config.js; ../likened-b2b/public/css | buildTailwindCSS; buildCSSBundle | update | TASK-HOSTCUT-007 | REQ-B2B-004, CON-B2B-003 | completed | null | npm run build && test ! -e public/css/b-to-b-bundle.css && test ! -e public/css/tailwind.min.css && test -f dist/css/b-to-b-bundle.css && test -f dist/css/tailwind.min.css | Build creates both deployable CSS files only under ignored `dist/` and fails if either returns to `public/` | Restore CSS source inputs and remove generated output from `public/` |
+| TASK-HOSTCUT-016 | Generate B2B Tailwind and page CSS from package and page sources; reject public bundles | ../likened-b2b/scripts/build.js; ../likened-b2b/src/css/pages/b-to-b.css; ../likened-b2b/tailwind.config.js; ../likened-b2b/public/css | buildTailwindCSS; buildCSSArtifacts | update | TASK-HOSTCUT-007 | REQ-B2B-004, CON-B2B-003 | completed | null | npm run build && test ! -e public/css/landing-page.css && test ! -e public/css/b-to-b.css && test ! -e public/css/tailwind.min.css && test -f dist/css/landing-page.css && test -f dist/css/b-to-b.css && test -f dist/css/tailwind.min.css | Build creates package-owned shared, B2B page, and Tailwind stylesheets only under ignored `dist/` | Restore CSS source inputs and remove generated output from `public/` |
 
 ### Implementation Phase 4 — B2C Replication and Source Remediation
 
@@ -271,7 +272,7 @@ Machine task table:
 | TEST-HOSTCUT-006 | dependency integration | REQ-B2B-003, REQ-B2C-014, Contract-HOSTCUT-001 | In each B2B/B2C repo run `npm ci && npm run build && npm ls @ksimonnet/utils` | Both clean builds resolve 2.1.0 or later and browser output includes the shared action |
 | TEST-HOSTCUT-007 | duplicate ownership | CON-B2B-002, CON-B2C-007, Contract-HOSTCUT-001 | `rg "function animateStatCounter|export function animateStatCounter"` in landing consumer sources | No consumer-local implementation remains |
 | TEST-HOSTCUT-008 | package regression | Contract-HOSTCUT-001 | `cd ../private && npm test -- --grep animateStatCounter` and build all four consumers | Shared action tests and all consumer builds pass |
-| TEST-HOSTCUT-009 | CSS artifact boundary | REQ-B2B-004, CON-B2B-003, Contract-HOSTCUT-002 | `cd ../likened-b2b && npm run build && test ! -e public/css/b-to-b-bundle.css && test ! -e public/css/tailwind.min.css && test -f dist/css/b-to-b-bundle.css && test -f dist/css/tailwind.min.css` | The clean B2B build generates both CSS artifacts from maintained sources; no generated stylesheets are kept in `public/` |
+| TEST-HOSTCUT-009 | CSS artifact boundary | REQ-B2B-004, CON-B2B-003, Contract-HOSTCUT-002 | `cd ../likened-b2b && npm run build && test ! -e public/css/landing-page.css && test ! -e public/css/b-to-b.css && test ! -e public/css/tailwind.min.css && test -f dist/css/landing-page.css && test -f dist/css/b-to-b.css && test -f dist/css/tailwind.min.css` | The clean B2B build generates package-owned shared, B2B page, and Tailwind CSS from sources without consumer composition wrappers |
 
 ## 8. Risks & Assumptions
 
@@ -289,7 +290,7 @@ Machine task table:
 - [x] `likened-b2b` Pages Source is GitHub Actions and deploys its `dist/` artifact.
 - [x] `b2b.likened.net` is bound only to `likened-b2b` GitHub Pages.
 - [x] B2B application-entry links open `https://likened.net/app/#/dashboard`.
-- [x] B2B CSS is generated from `src/css/tailwind.css`, `tailwind.config.js`, and `src/css/b-to-b.css` into `dist/css/`; no generated CSS is committed in `public/css/`.
+- [x] B2B CSS uses the shared package's `landing-page.css` entry plus `src/css/pages/b-to-b.css`; all generated stylesheets are emitted under `dist/css/`.
 - [x] The webapp remains deployed independently at `https://likened.net/app/`.
 - [x] Production B2B page and app-entry navigation pass manual smoke testing.
 - [x] `b2c.likened.net` is deployed through an independent self-contained Pages artifact.
