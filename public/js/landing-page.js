@@ -3,6 +3,8 @@ import { buildSVGOverlayOn } from "@ksimonnet/utils/web/manip-dom/modules/build-
 import { createSVGImage } from "@ksimonnet/utils/web/manip-dom/modules/create-svg-image.js";
 import { createSVGRectangle } from "@ksimonnet/utils/web/manip-dom/modules/create-svg-rectangle.js";
 import { setAttribute } from "@ksimonnet/utils/web/manip-dom/modules/set-attribute.js";
+import { ModalManager } from "@ksimonnet/utils/web/classes/modules/modal-manager.js";
+import { updateCardContent } from "./lib/chart-engine.js";
 
 const AUTO_ADVANCE_INTERVAL_MS = 3000;
 const MOBILE_BREAKPOINT_QUERY = "(max-width: 768px)";
@@ -239,6 +241,43 @@ function buildStatSide(side_data) {
 
   return side_element;
 }
+
+const COMPANY_RENDER_DIRECTIVES = [
+  { id: "company-info-list", path_segments: ["company"] },
+  { id: "company-analytics-list", path_segments: ["company_analytics"] },
+  { id: "sentiment-analysis-list", path_segments: ["sentiment_analysis"] },
+  { id: "talent-insights-list", path_segments: ["talent_insights"] },
+  {
+    id: "project-budget-chart",
+    section_name: "r_and_d_budget",
+    path_segments: ["company_analytics", "project_budget"],
+    chartType: "pie"
+  },
+  {
+    id: "growth-rate-chart",
+    section_name: "growth_rates",
+    path_segments: ["company_analytics"],
+    chartType: "bar"
+  },
+  {
+    id: "funding-received-chart",
+    section_name: "funding_history",
+    path_segments: ["company_analytics", "funding_received"],
+    chartType: "line"
+  },
+  {
+    id: "employee-wellbeing-score-chart",
+    section_name: "employee_wellbeing",
+    path_segments: ["sentiment_analysis", "employee_well_being_score"],
+    chartType: "pie"
+  },
+  {
+    id: "employee-reviews-stars",
+    section_name: "employee_reviews",
+    path_segments: ["sentiment_analysis", "employee_reviews"],
+    chartType: "stars"
+  }
+];
 
 function renderStatsCards() {
   const stats_carousel = document.getElementById("b2b-stats-carousel");
@@ -997,6 +1036,148 @@ document.addEventListener("DOMContentLoaded", () => {
   initializeStatsCarousel();
   initializeTestimonialCarousel();
   initializeB2BIcebergSwitch();
+
+  // Popup company card event listeners
+  document.querySelectorAll(".popup-company-card").forEach((link, index) => {
+    link.addEventListener("click", function (e) {
+      e.preventDefault();
+      // TODO - Duplicated `companyModalConfig`, just make it work with `ModalManager`
+      const companyModalConfig = {
+        cards: [
+          {
+            company: {
+              name: "CrowdStrike",
+              linkedin_page: "https://linkedin.com/company/crowdstrike",
+              description:
+                "A cybersecurity technology firm pioneering cloud-delivered next-generation endpoint protection and services.",
+              country: "USA",
+              specialities:
+                "Cybersecurity, Cloud Security, Threat Intelligence",
+              industries: "Technology, Cybersecurity",
+              employee_count: "158",
+              type: "Public company",
+              actively_hiring: {
+                href: "https://www.glassdoor.com.au/job-listing/sr-medical-editor-australia-home-base-syneos-clinical-and-corporate-prod-JV_IC2218494_KO0,37_KE38,72.htm?",
+                source: "glassdoor"
+              }
+            },
+            company_analytics: {
+              project_budget: {
+                data_science: 170,
+                software_development: 85,
+                gen_ai: 120,
+                marketing: 10,
+                operations: 5,
+                other: 2
+              },
+              yoy_revenue_growth_rate: "41%",
+              yoy_headcount_growth_rate: "32%",
+              funding_received: {
+                seed: 5,
+                Series_a: 18,
+                series_b: 50,
+                series_c: 118
+              },
+              market_capitalization: "$12.5Bn"
+            },
+            sentiment_analysis: {
+              team_culture:
+                "Fast-paced, results-oriented culture with strong focus on threat hunting excellence",
+              employee_reviews:
+                "4.1/5.0 (Glassdoor) - High-energy environment with excellent learning opportunities",
+              employee_well_being_score:
+                "72/100 - Good benefits package with room for improvement in work-life balance",
+              staff_turn_over:
+                "15% annually - Slightly below industry average, higher in sales roles"
+            },
+            talent_insights: {
+              level_of_seniority:
+                "Expert level - 70% senior/principal engineers, 20% mid-level, 10% junior",
+              tech_stack:
+                "Go, Python, Rust, AWS, Azure, React, GraphQL, Kafka, Redis, Falcon platform",
+              staff_turnover:
+                "15% annual turnover with 60% moving to leadership roles in other companies",
+              talent_pool_analysis:
+                "Premium talent pool in threat intelligence, 35% referral hiring, strong security clearance pipeline",
+              referral_program:
+                "Competitive referral program with $7,500 bonus for senior roles, $3,000 for mid-level",
+              community_engagement:
+                "CrowdStrike University, SANS partnerships, DEF CON sponsorships, threat research publications"
+            }
+          },
+          {
+            company: {
+              name: "SentinelOne",
+              linkedin_page: "https://linkedin.com/company/sentinel-one",
+              description:
+                "SentinelOne is a pioneer in developing anti-malware software. We specialise in autonomous AI-based endpoint protection that successfully prevents, detects, and responds to attacks across all major vectors.",
+              country: "USA",
+              specialities:
+                "Cybersecurity, Blockchain Technology, Internet of Things (IoT)",
+              industries: "Technology, Research & Development",
+              employee_count: "217",
+              type: "Privately held",
+              actively_hiring: null
+            },
+            company_analytics: {
+              project_budget: {
+                data_science: 45,
+                software_development: 10,
+                gen_ai: 9,
+                marketing: 5,
+                operations: 5,
+                other: 1
+              },
+              yoy_revenue_growth_rate: "35%",
+              yoy_headcount_growth_rate: "28%",
+              funding_received: {
+                seed: 1,
+                Series_a: 18,
+                series_b: 5,
+                series_c: 30,
+                series_d: 45,
+                series_e: 15,
+                series_f: 26
+              },
+              market_capitalization: "$3.2Bn"
+            },
+            sentiment_analysis: {
+              team_culture:
+                "Collaborative and innovation-driven environment with strong emphasis on autonomous decision-making",
+              employee_reviews:
+                "4.3/5.0 (Glassdoor) - Employees praise work-life balance and cutting-edge technology",
+              employee_well_being_score:
+                "78/100 - Above industry average with comprehensive health benefits",
+              staff_turn_over: "12% annually - Below industry standard of 18%"
+            },
+            talent_insights: {
+              level_of_seniority:
+                "Senior level - 65% senior engineers, 25% mid-level, 10% junior",
+              tech_stack:
+                "Python, Go, C++, Kubernetes, AWS, React, PostgreSQL, Elasticsearch, Docker",
+              staff_turnover:
+                "12% annual turnover with 85% voluntary departures for career advancement",
+              talent_pool_analysis:
+                "Strong pipeline in cybersecurity and AI/ML domains, 40% referral hiring rate",
+              referral_program:
+                "Active employee referral program with $5,000 bonus for successful hires",
+              community_engagement:
+                "Regular tech meetups, open-source contributions, university partnerships"
+            }
+          }
+        ],
+        template_id: "company-card-panel",
+        onPanelMounted: (card) =>
+          updateCardContent(card, COMPANY_RENDER_DIRECTIVES)
+      };
+
+      const companyCard = new ModalManager(companyModalConfig);
+      companyCard.populateModalWithSelectedRecord(
+        companyModalConfig.cards[index] ?? companyModalConfig.cards[0],
+        index
+      );
+    });
+  });
 
   window.addEventListener("beforeunload", () => {
     AnimationManager.actions.clearIntervalAction({
