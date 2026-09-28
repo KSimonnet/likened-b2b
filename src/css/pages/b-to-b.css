@@ -3,41 +3,17 @@
    the bundle: brand-kit → likened-style → page-style → b-to-b */
 
 /* ─── Alternating full-width section stripes ─────────────────────────────── */
-
-main {
-  gap: 0;
-  padding-inline: calc(3 * var(--likened-padding));
-  background: linear-gradient(
-    to bottom,
-    var(--likened-blue),
-    var(--likened-dark-grey)
-  );
-}
+/* Stripe backgrounds + colour inheritance are owned by the shared
+   `.section-stripes` / `.section-stripe--deep` / `.section-stripe--light`
+   rules in @ksimonnet/likened-shared (page-style.css). Reuse them via
+   `<main class="section-stripes">` instead of redeclaring per page —
+   a single `color` on the stripe container cascades to every descendant
+   through normal CSS inheritance, so no per-tag override list is needed here. */
 
 .segmented-section {
   margin-bottom: 0;
   border-radius: 0;
   box-shadow: none;
-}
-
-.b2b-stripe--deep {
-  --b2b-foreground: var(--likened-white);
-  background: transparent;
-  color: var(--b2b-foreground);
-}
-
-.b2b-stripe--light {
-  --b2b-foreground: var(--likened-black);
-  background-color: var(--likened-white);
-  box-shadow: 0 0 0 100vmax var(--likened-white);
-  clip-path: inset(0 -100vmax);
-  color: var(--b2b-foreground);
-}
-
-.b2b-surface--light {
-  --b2b-foreground: var(--likened-black);
-  background-color: var(--likened-white);
-  color: var(--b2b-foreground);
 }
 
 /* ─── Stats Hook ────────────────────────────────────────────────────────────── */
