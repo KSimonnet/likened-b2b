@@ -23,6 +23,7 @@ main {
 .b2b-stripe--deep {
   --b2b-foreground: var(--likened-white);
   background: transparent;
+  color: var(--b2b-foreground);
 }
 
 .b2b-stripe--light {
@@ -30,17 +31,13 @@ main {
   background-color: var(--likened-white);
   box-shadow: 0 0 0 100vmax var(--likened-white);
   clip-path: inset(0 -100vmax);
-}
-
-.b2b-stripe--deep :is(h1, h2, h3, p, li, dt, dd, summary),
-.b2b-stripe--light :is(h1, h2, h3, p, li, dt, dd, summary),
-.b2b-surface--light :is(h1, h2, h3, p, li, dt, dd, summary) {
   color: var(--b2b-foreground);
 }
 
 .b2b-surface--light {
   --b2b-foreground: var(--likened-black);
   background-color: var(--likened-white);
+  color: var(--b2b-foreground);
 }
 
 /* ─── Stats Hook ────────────────────────────────────────────────────────────── */
