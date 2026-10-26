@@ -72,8 +72,8 @@ async function buildSharedLandingCSS() {
   await esbuild.build({
     bundle: true,
     stdin: {
-      contents: LANDING_PAGE_CSS_MODULES.map((module_path) =>
-        `@import "${module_path}";`
+      contents: LANDING_PAGE_CSS_MODULES.map(
+        (module_path) => `@import "${module_path}";`
       ).join("\n"),
       resolveDir: PROJECT_ROOT,
       sourcefile: "landing-page.css",
@@ -131,6 +131,17 @@ async function build() {
   console.log("Building static B2B site...");
   await validateCSSArtifactBoundary();
   await cleanDist();
+  await fs.mkdir(path.join(DIST_ROOT, "assets/images"), { recursive: true });
+  await fs.copyFile(
+    require.resolve("@ksimonnet/likened-shared/assets/images/generic-profile-icon-small.png"),
+    path.join(DIST_ROOT, "assets/images/generic-profile-icon-small.png")
+  );
+  await copyDirectory(
+    path.dirname(
+      require.resolve("@ksimonnet/likened-shared/assets/fonts/OpenSans/OpenSans-Regular.woff2")
+    ),
+    path.join(DIST_ROOT, "assets/fonts/OpenSans")
+  );
   await copyDirectory(path.join(PROJECT_ROOT, "public"), DIST_ROOT);
   await buildTailwindCSS();
   await buildCSSArtifacts();
