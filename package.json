@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@ksimonnet/likened-shared": "^1.11.0",
-    "@ksimonnet/utils": "^2.1.0"
+    "@ksimonnet/utils": "^3.2.1"
   },
   "devDependencies": {
     "esbuild": "^0.28.2",
