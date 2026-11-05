@@ -794,10 +794,6 @@
 }
 
 @media (max-width: 480px) {
-  .header-actions > .link-no-underline {
-    display: none;
-  }
-
   .header-actions .button-link {
     height: auto;
     padding: var(--likened-padding) calc(1.5 * var(--likened-padding));
