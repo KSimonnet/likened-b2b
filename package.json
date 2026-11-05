@@ -9,7 +9,7 @@
     "serve": "npx kill-port 8080 && npm run build && npx http-server dist -p 8080 -o"
   },
   "dependencies": {
-    "@ksimonnet/likened-shared": "^1.11.0",
+    "@ksimonnet/likened-shared": "^1.11.1",
     "@ksimonnet/utils": "^3.2.1"
   },
   "devDependencies": {
