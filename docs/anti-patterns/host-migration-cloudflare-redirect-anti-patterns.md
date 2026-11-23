@@ -314,7 +314,7 @@ Each repository build must fail if a generated bundle is reintroduced at its pub
 
 **Reference:**
 - Contract: [host-migration-cloudflare-redirect-contracts.md](../contracts/host-migration-cloudflare-redirect-contracts.md)
-- Specification: [b-to-b-landing-page-specifications.md](../Specifications/b-to-b-landing-page-specifications.md)
+- Specification: [b-to-b-landing-page-specifications.md](../specifications/b-to-b-landing-page-specifications.md)
 
 ---
 

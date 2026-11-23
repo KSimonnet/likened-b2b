@@ -77,12 +77,12 @@ This plan changes B2B build ownership, GitHub Pages deployment, static routing, 
 | TRACE-005 | adr | ADR-STYLE-004 | docs/architecture/styling-principles-adr.md | CSS architecture remains centralized and not bypassed during host split. |
 | TRACE-006 | contract | Contract-CSS-011 | docs/contracts/styling-principles-contracts.md | No inline style behavior is introduced while adding metadata/routing pages. |
 | TRACE-007 | anti-pattern | Anti-Pattern-STYLE-003 | docs/anti-patterns/styling-principles-anti-patterns.md | Prevent cross-page bundle composition drift while remapping outputs. |
-| TRACE-008 | specification | REQ-B2C-011–013, CON-B2C-006 | docs/Specifications/host-migration-cloudflare-redirect-specifications.md | Defines the B2C source entry point, generated bundle, and clean CI build boundary. |
+| TRACE-008 | specification | REQ-B2C-011–013, CON-B2C-006 | docs/specifications/host-migration-cloudflare-redirect-specifications.md | Defines the B2C source entry point, generated bundle, and clean CI build boundary. |
 | TRACE-009 | contract | Contract-B2C-002 | docs/contracts/host-migration-cloudflare-redirect-contracts.md | Enforces source/artifact separation. |
 | TRACE-010 | anti-pattern | Anti-Pattern-HOSTCUT-004 | docs/anti-patterns/host-migration-cloudflare-redirect-anti-patterns.md | Records the generated-bundle-as-source migration failure. |
 | TRACE-011 | contract | Contract-HOSTCUT-001 | docs/contracts/host-migration-cloudflare-redirect-contracts.md | Requires landing consumers to use the package-owned counter action. |
 | TRACE-012 | anti-pattern | Anti-Pattern-HOSTCUT-005 | docs/anti-patterns/host-migration-cloudflare-redirect-anti-patterns.md | Records duplicate stat-counter implementations across repositories. |
-| TRACE-013 | specification | REQ-B2B-004, CON-B2B-003 | docs/Specifications/host-migration-cloudflare-redirect-specifications.md | Requires B2B CSS sources to generate a dist-only bundle. |
+| TRACE-013 | specification | REQ-B2B-004, CON-B2B-003 | docs/specifications/host-migration-cloudflare-redirect-specifications.md | Requires B2B CSS sources to generate a dist-only bundle. |
 | TRACE-014 | contract | Contract-HOSTCUT-002 | docs/contracts/host-migration-cloudflare-redirect-contracts.md | Enforces JavaScript and CSS source/artifact boundaries across landing consumers. |
 | TRACE-015 | anti-pattern | Anti-Pattern-HOSTCUT-006 | docs/anti-patterns/host-migration-cloudflare-redirect-anti-patterns.md | Records why generated CSS and JavaScript bundles became tracked public source. |
 
@@ -330,7 +330,7 @@ Machine task table:
 ## 11. References
 
 ### Specifications
-- [docs/Specifications/host-migration-cloudflare-redirect-specifications.md](../Specifications/host-migration-cloudflare-redirect-specifications.md) — canonical routing, B2C host, and source/artifact requirements
+- [docs/specifications/host-migration-cloudflare-redirect-specifications.md](../specifications/host-migration-cloudflare-redirect-specifications.md) — canonical routing, B2C host, and source/artifact requirements
 - [docs/specifications/b-to-b-landing-page-specifications.md](../specifications/b-to-b-landing-page-specifications.md) — source of B2B build and cross-linking requirements
 - [docs/specifications/landing-page-and-pricing-specifications.md](../specifications/landing-page-and-pricing-specifications.md) — source of B2C reciprocal redirect behavior and additive constraints
 
