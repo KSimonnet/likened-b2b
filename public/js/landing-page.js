@@ -112,7 +112,7 @@ const B2B_TESTIMONIAL_OL = Object.freeze([
     author_name: "Cibby Pulikkaseril",
     author_role: "Founder and CEO - Zabidou",
     company_logo: {
-      src: "../assets/images/logo-2n3WnjSX.png",
+      src: "../assets/images/logo-zabidou.png",
       alt: "Zabidou logo"
     },
     profile_link: {
